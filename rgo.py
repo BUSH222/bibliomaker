@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
+
 def rgo_suck(a):
     a = f"https://elib.rgo.ru/simple-search?location=%2F&query={a}&rpp=10&sort_by=score&order=desc"
     req = requests.get(a)
@@ -11,6 +12,7 @@ def rgo_suck(a):
         return page_p
     except:
         return a
+
 
 ad = rgo_suck("Обручев")
 print(ad)
