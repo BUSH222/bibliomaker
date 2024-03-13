@@ -4,22 +4,36 @@ import requests
 from datetime import datetime
 
 
-def wikisearch(person):
-    """Search for a person on wikipedia."""
-    exists = False
-    URL = "https://ru.wikipedia.org/w/api.php"
-    URL2 = "https://www.wikidata.org/w/api.php"
-    pob, dob, pod, dod = None, None, None, None
+def wikisearch(person, locale='ru'):
+    """Search for a person on wikipedia.
 
-    # Check if person exists in wiki
+    Inputs:
+            person (string) - name of the person to look up
+            locale (string, default='ru') - [OPTIONAL] wiki language
+    Output:
+            list or NoneType
+            list:
+                - Date of Birth (Datetime or NoneType)
+                - Date of Death (Datetime or NoneType)
+                - Place of Birth (string or NoneType)
+                - Place of Death (string or NoneType)
+    """
+
+    # Constants
+    URL = f"https://{locale}.wikipedia.org/w/api.php"
+    URL2 = "https://www.wikidata.org/w/api.php"
     PARAMS1 = {
         "action": "query",
         "format": "json",
         "list": "search",
-        "sites": "ruwiki",
+        "sites": f"{locale}wiki",
         "srsearch": person
     }
+    # Initialising Variables
+    exists = False
+    pob, dob, pod, dod = None, None, None, None
 
+    # Check if person exists in wiki
     R1 = requests.get(url=URL, params=PARAMS1)
     data = R1.json()
     searchinfo = data['query']['searchinfo']
@@ -44,7 +58,7 @@ def wikisearch(person):
         "prop": "pageprops",
         "pageids": pageid,
         "formatversion": "2",
-        "sites": "ruwiki",
+        "sites": f"{locale}wiki",
     }
 
     R2 = requests.get(url=URL, params=PARAMS2)
@@ -60,7 +74,7 @@ def wikisearch(person):
     PARAMS3 = {"action": "wbgetentities",
                "format": "json",
                "ids": wikibase_id,
-               "sites": "ruwiki",
+               "sites": f"{locale}wiki",
                "props": "claims",
                "formatversion": "2"}
     R3 = requests.get(url=URL2, params=PARAMS3)
@@ -70,23 +84,29 @@ def wikisearch(person):
     pobid = data["P19"][0]['mainsnak']['datavalue']['value']['id']  # Place of Birth id
     podid = data["P20"][0]['mainsnak']['datavalue']['value']['id']  # Place of Death id
 
+    # Find places of birth from ids
     PARAMS3['props'] = 'labels'
     PARAMS3['ids'] = pobid
     R4 = requests.get(url=URL2, params=PARAMS3)
     PARAMS3['ids'] = podid
     R5 = requests.get(url=URL2, params=PARAMS3)
 
-    pob = R4.json()['entities'][pobid]['labels']['ru']['value']
-    pod = R5.json()['entities'][podid]['labels']['ru']['value']
-
+    pob = R4.json()['entities'][pobid]['labels'][f'{locale}']['value']
+    pod = R5.json()['entities'][podid]['labels'][f'{locale}']['value']
+    # Convert the datetimes from str to datetime
     dob = datetime.strptime(dobraw, '+%Y-%m-%dT%H:%M:%SZ')
     dod = datetime.strptime(dodraw, '+%Y-%m-%dT%H:%M:%SZ')
     return [dob, dod, pob, pod]
 
 
-persontest1 = "Русаков Михаил Петрович"
-persontest2 = "Обручев Владимир Афанасьевич"
-persontest3 = "Сумгин Михаил Иванович"
-persontest4 = "Вознесенский Владимир Александрович"
-res = wikisearch(persontest3)
-print(res)
+def tester():
+    """Temporary testing function"""
+    persontest1 = "Русаков Михаил Петрович"
+    # persontest2 = "Обручев Владимир Афанасьевич"
+    # persontest3 = "Сумгин Михаил Иванович"
+    # persontest4 = "Вознесенский Владимир Александрович"
+    res = wikisearch(persontest1)
+    print(res)
+
+
+tester()
