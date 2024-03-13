@@ -13,10 +13,12 @@ def wikisearch(person, locale='ru'):
     Output:
             list or NoneType
             list:
-                - Date of Birth (Datetime or NoneType)
-                - Date of Death (Datetime or NoneType)
-                - Place of Birth (string or NoneType)
-                - Place of Death (string or NoneType)
+                - Date of birth (Datetime or NoneType)
+                - Date of death (Datetime or NoneType)
+                - Place of birth (string or NoneType)
+                - Place of death (string or NoneType)
+                - Description of place of birth (string or NoneType)
+                - Descriptions of place of death (string or NoneType)
     """
 
     # Constants
@@ -85,7 +87,7 @@ def wikisearch(person, locale='ru'):
     podid = data["P20"][0]['mainsnak']['datavalue']['value']['id']  # Place of Death id
 
     # Find places of birth from ids
-    PARAMS3['props'] = 'labels'
+    PARAMS3['props'] = 'labels|descriptions'
     PARAMS3['ids'] = pobid
     R4 = requests.get(url=URL2, params=PARAMS3)
     PARAMS3['ids'] = podid
@@ -93,10 +95,14 @@ def wikisearch(person, locale='ru'):
 
     pob = R4.json()['entities'][pobid]['labels'][f'{locale}']['value']
     pod = R5.json()['entities'][podid]['labels'][f'{locale}']['value']
+
+    # Get descriptions
+    pobdesc = R4.json()['entities'][pobid]['descriptions'][f'{locale}']['value']
+    poddesc = R5.json()['entities'][podid]['descriptions'][f'{locale}']['value']
     # Convert the datetimes from str to datetime
     dob = datetime.strptime(dobraw, '+%Y-%m-%dT%H:%M:%SZ')
     dod = datetime.strptime(dodraw, '+%Y-%m-%dT%H:%M:%SZ')
-    return [dob, dod, pob, pod]
+    return [dob, dod, pob, pod, pobdesc, poddesc]
 
 
 def tester():
