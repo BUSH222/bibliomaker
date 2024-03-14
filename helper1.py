@@ -2,10 +2,23 @@
 
 import requests
 from datetime import datetime
+from functools import wraps
 
 
-def wikisearch(person, locale='ru'):
-    """Search for a person on wikipedia.
+def handler(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            return f"Something went wrong, try again:\nFull exception\n{e}"
+    return wrapper
+
+
+@handler
+def wikisearch(person, locale='ru', verbosity=False):
+    """
+    Search for a person on wikipedia.
 
     Inputs:
             person (string) - name of the person to look up
@@ -34,25 +47,34 @@ def wikisearch(person, locale='ru'):
     # Initialising Variables
     exists = False
     pob, dob, pod, dod = None, None, None, None
+    pobdesc, poddesc = None, None
 
     # Check if person exists in wiki
+    if verbosity:
+        print("Checking if a person exists in wiki...")
     R1 = requests.get(url=URL, params=PARAMS1)
     data = R1.json()
     searchinfo = data['query']['searchinfo']
     searchresults = data['query']['search']
 
     if searchinfo['totalhits'] == 0:
+        if verbosity:
+            print("Not found, exiting")
         return None
 
     # if exists, get the page id
     if searchresults[0]['title'].replace(',', '') == person:
         exists = True
+        if verbosity:
+            print("Found")
         pageid = searchresults[0]['pageid']
 
     if not exists:
         return None
 
     # Obtain the wikimedia unique id
+    if verbosity:
+        print("Obtaining the wikimedia unique id")
 
     PARAMS2 = {
         "action": "query",
@@ -79,12 +101,25 @@ def wikisearch(person, locale='ru'):
                "sites": f"{locale}wiki",
                "props": "claims",
                "formatversion": "2"}
+
+    if verbosity:
+        print("Fetching dates and places.")
+
     R3 = requests.get(url=URL2, params=PARAMS3)
     data = R3.json()['entities'][wikibase_id]['claims']
-    dobraw = data["P569"][0]['mainsnak']['datavalue']['value']['time']  # Date of Birth
-    dodraw = data["P570"][0]['mainsnak']['datavalue']['value']['time']  # Date of Death
-    pobid = data["P19"][0]['mainsnak']['datavalue']['value']['id']  # Place of Birth id
-    podid = data["P20"][0]['mainsnak']['datavalue']['value']['id']  # Place of Death id
+
+    try:
+        dobraw = data["P569"][0]['mainsnak']['datavalue']['value']['time']  # Date of Birth
+        pobid = data["P19"][0]['mainsnak']['datavalue']['value']['id']  # Place of Birth id
+    except KeyError:
+        if verbosity:
+            print("Error fetching date of birth or place of birth id")
+    try:
+        dodraw = data["P570"][0]['mainsnak']['datavalue']['value']['time']  # Date of Death
+        podid = data["P20"][0]['mainsnak']['datavalue']['value']['id']  # Place of Death id
+    except KeyError:
+        if verbosity:
+            print("Error fetching date of death or place of death id")
 
     # Find places of birth from ids
     PARAMS3['props'] = 'labels|descriptions'
@@ -93,12 +128,29 @@ def wikisearch(person, locale='ru'):
     PARAMS3['ids'] = podid
     R5 = requests.get(url=URL2, params=PARAMS3)
 
-    pob = R4.json()['entities'][pobid]['labels'][f'{locale}']['value']
-    pod = R5.json()['entities'][podid]['labels'][f'{locale}']['value']
+    try:
+        pob = R4.json()['entities'][pobid]['labels'][f'{locale}']['value']
+    except KeyError:
+        if verbosity:
+            print("Error fetching place of birth description")
+    try:
+        pod = R5.json()['entities'][podid]['labels'][f'{locale}']['value']
+    except KeyError:
+        if verbosity:
+            print("Error fetching place of death description")
 
     # Get descriptions
-    pobdesc = R4.json()['entities'][pobid]['descriptions'][f'{locale}']['value']
-    poddesc = R5.json()['entities'][podid]['descriptions'][f'{locale}']['value']
+    try:
+        pobdesc = R4.json()['entities'][pobid]['descriptions'][f'{locale}']['value']
+    except KeyError:
+        if verbosity:
+            print("Error fetching place of birth description")
+
+    try:
+        poddesc = R5.json()['entities'][podid]['descriptions'][f'{locale}']['value']
+    except KeyError:
+        if verbosity:
+            print("Place of Death Description not found")
     # Convert the datetimes from str to datetime
     dob = datetime.strptime(dobraw, '+%Y-%m-%dT%H:%M:%SZ')
     dod = datetime.strptime(dodraw, '+%Y-%m-%dT%H:%M:%SZ')
@@ -106,7 +158,7 @@ def wikisearch(person, locale='ru'):
 
 
 def tester():
-    """Temporary testing function"""
+    """Temporary testing function."""
     persontest1 = "Русаков Михаил Петрович"
     # persontest2 = "Обручев Владимир Афанасьевич"
     # persontest3 = "Сумгин Михаил Иванович"
