@@ -6,32 +6,34 @@ from functools import wraps
 
 
 def handler(func):
+    """Decorator function, prints exceptions instead of exiting."""
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            return f"Something went wrong, try again:\nFull exception\n{e}"
+            return f"Something went wrong, try again:\nFull exception:\n{e}"
     return wrapper
 
 
 @handler
-def wikisearch(person, locale='ru', verbosity=False):
+def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | None):
     """
-    Search for a person on wikipedia.
-
-    Inputs:
-            person (string) - name of the person to look up
-            locale (string, default='ru') - [OPTIONAL] wiki language
-    Output:
-            list or NoneType
-            list:
-                - Date of birth (Datetime or NoneType)
-                - Date of death (Datetime or NoneType)
-                - Place of birth (string or NoneType)
-                - Place of death (string or NoneType)
-                - Description of place of birth (string or NoneType)
-                - Descriptions of place of death (string or NoneType)
+    ### Search for a person on wikipedia.
+    ## Args:
+        * `person (str)` - name of the person to look up
+        * `locale (str, default='ru')` - [OPTIONAL] wiki language
+        * `verbosity (bool, default=False)` - [OPTIONAL] print additional information
+    ## Returns:
+        * `list`:
+            - Date of birth (Datetime or None)
+            - Date of death (Datetime or None)
+            - Place of birth (str or None)
+            - Place of death (str or None)
+            - Description of place of birth (str or None)
+            - Descriptions of place of death (str or None)
+        * `None` - the person does not exist in wikipedia.
+        * `list[None]` - the person exists in wikipedia but no information can be obtained.
     """
 
     # Constants
@@ -86,7 +88,11 @@ def wikisearch(person, locale='ru', verbosity=False):
     }
 
     R2 = requests.get(url=URL, params=PARAMS2)
-    wikibase_id = R2.json()['query']['pages'][0]['pageprops']['wikibase_item']
+    try:
+        wikibase_id = R2.json()['query']['pages'][0]['pageprops']['wikibase_item']
+    except KeyError:
+        print("Error getting wikimedia id, no further information can be accessd.")
+        return [None, None, None, None, None, None]
 
     # Obtain the necessary information from wikibase
     # P numbers:
@@ -106,7 +112,12 @@ def wikisearch(person, locale='ru', verbosity=False):
         print("Fetching dates and places.")
 
     R3 = requests.get(url=URL2, params=PARAMS3)
-    data = R3.json()['entities'][wikibase_id]['claims']
+    try:
+        data = R3.json()['entities'][wikibase_id]['claims']
+    except KeyError:
+        if verbosity:
+            print("No claims for wikimedia id found, no further info can be obtained")
+        return [None, None, None, None, None, None]
 
     try:
         dobraw = data["P569"][0]['mainsnak']['datavalue']['value']['time']  # Date of Birth
