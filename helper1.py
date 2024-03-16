@@ -5,6 +5,21 @@ from datetime import datetime
 from functools import wraps
 
 
+class BibEntry:
+    def __init__(self, authors: list, title: str, source: str) -> None:
+        self.authors = authors
+        self.title = title
+        self.source = source
+
+    def peek(self):
+        """Print the contents of the entry, testing function"""
+        print(f'{', '.join(self.authors)} {self.title} // {self.source}')
+
+    def out(self):
+        """Return the contents of the entry."""
+        return f'{', '.join(self.authors)} {self.title} // {self.source}'
+
+
 def handler(func):
     """Decorator function, prints exceptions instead of exiting."""
     @wraps(func)
@@ -168,6 +183,10 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
     if verbosity:
         print('Done!')
     return [dob, dod, pob, pod, pobdesc, poddesc]
+
+
+def rslsearch(person, fields=[]):
+    pass
 
 
 def tester():
