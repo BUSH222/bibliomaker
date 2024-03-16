@@ -1,23 +1,25 @@
 ## File for tasks 1-5
 
 import requests
+import re
 from datetime import datetime
 from functools import wraps
 
 
 class BibEntry:
-    def __init__(self, authors: list, title: str, source: str) -> None:
+    def __init__(self, authors: str, title: str, source: str, physical_desc: str) -> None:
         self.authors = authors
         self.title = title
         self.source = source
+        self.physical_desc = physical_desc
 
     def peek(self):
         """Print the contents of the entry, testing function"""
-        print(f'{', '.join(self.authors)} {self.title} // {self.source}')
+        print(f'{self.authors} {self.title} // {self.source} {self.physical_desc}')
 
-    def out(self):
+    def __str__(self):
         """Return the contents of the entry."""
-        return f'{', '.join(self.authors)} {self.title} // {self.source}'
+        return f'{self.authors} {self.title} // {self.source} {self.physical_desc}'
 
 
 def handler(func):
@@ -186,7 +188,36 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
 
 
 def rslsearch(person, fields=[]):
-    pass
+    URL = 'https://search.rsl.ru/site/ajax-search?language=ru'
+    URL2 = 'https://search.rsl.ru'
+    PATTERN = r'href=\"(\/ru\/record\/\d*?)\"'
+    reqdata = {
+        "SearchFilterForm[sortby]": "default",
+        "SearchFilterForm[page]": "1",
+        "SearchFilterForm[search]": f"author:(\"{person.replace(' ', '+')}\")",
+        "SearchFilterForm[fulltext]": "0",
+        "SearchFilterForm[updatedFields][]": "search"}
+    
+    entries = []
+
+    r = requests.get(URL, data=reqdata).json()
+    hits = re.findall(PATTERN, r['content'])
+    for i in range(1, r['MaxPage']):
+        reqdata['SearchFilterForm[page]'] = i + 1
+        r_l = requests.get(URL, data=reqdata).json()
+        hits.extend(re.findall(PATTERN, r_l['content']))
+    print(len(hits))
+    print(r['TotalHits'])
+
+    for p in hits:
+        hit = requests.get(URL2+p).text
+        author = ' '.join(re.findall(r'<td itemprop="author">(.*?)<\/td>', hit))
+        title = ' '.join(re.findall(r'<td itemprop="name">(.*?)<\/td>', hit))
+        publisher = ' '.join(re.findall(r'<th>Выходные данные<\/th><td>(.*?)<\/td>', hit))
+        physical_desc = ' '.join(re.findall(r'<th>Физическое описание<\/th><td>(.*?)<\/td>', hit))
+        entries.append(BibEntry(author, title, publisher, physical_desc))
+
+    return entries
 
 
 def tester():
@@ -195,8 +226,8 @@ def tester():
     # persontest2 = 'Обручев Владимир Афанасьевич'
     # persontest3 = 'Сумгин Михаил Иванович'
     # persontest4 = 'Вознесенский Владимир Александрович'
-    res = wikisearch(persontest1, verbosity=True)
-    print(res)
+    res = rslsearch(persontest1)
+    print(str(res[-1]))
 
 
 tester()
