@@ -1,13 +1,14 @@
 ## File for tasks 1-5
 
-import requests
-import aiohttp
 import asyncio
-import re
 import json
+import re
 from datetime import datetime
 from functools import wraps
 from itertools import chain
+
+import aiohttp
+import requests
 
 
 class BibEntry:
