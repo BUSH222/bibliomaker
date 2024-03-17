@@ -67,7 +67,19 @@ def handler(func):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            return f'Something went wrong, try again:\nFull exception:\n{e}'
+            return f'Something went wrong, try again:\nFull exception:\n{repr(e)}'
+    return wrapper
+
+
+def async_handler(func):
+    """Decorator function, prints exceptions in an asynchronous functions instead of exiting"""
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        try:
+            return await func(*args, **kwargs)
+        except Exception as e:
+            return f"Something went wrong, try again:\nFull exception:\n{repr(e)}"
+
     return wrapper
 
 
@@ -225,6 +237,7 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
     return [dob, dod, pob, pod, pobdesc, poddesc]
 
 
+@async_handler
 async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibEntry]):
     """
     ###Search for a person on the russian state library website.
@@ -294,7 +307,6 @@ async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibE
     entries = []
 
     logger.log('Starting the RSL search...')
-
     if not parallel:
         return non_parallel_rslsearch(logger, URL, URL2, PATTERN, reqdata)
 
@@ -333,7 +345,7 @@ def tester():
     # persontest4 = 'Вознесенский Владимир Александрович'
     res = asyncio.run(rslsearch(persontest1, verbosity=True, parallel=True))
     # print('\n'.join(list(map(str, r  es))))
-    print(len(res))
+    print(res)
 
 
 tester()
