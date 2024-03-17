@@ -60,6 +60,10 @@ class Logger:
         if self.verbosity:
             print(f'{color} {text} {self.ENDC}')
 
+    def fail(self, text, color=FAIL):
+        if self.verbosity:
+            print(f'{color} {text} {self.ENDC}')
+
 
 def handler(func):
     """Decorator function, prints exceptions instead of exiting."""
@@ -115,13 +119,13 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
         'srsearch': person
     }
     # Initialising Variables
+    logger = Logger(verbosity=verbosity)
     exists = False
     pob, dob, pod, dod = None, None, None, None
     pobdesc, poddesc = None, None
 
     # Check if person exists in wiki
-    if verbosity:
-        print('Checking if a person exists in wiki...')
+    logger.log('Checking if a person exists in wiki...')
     R1 = requests.get(url=URL, params=PARAMS1)
     data = R1.json()
     searchinfo = data['query']['searchinfo']
@@ -129,22 +133,20 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
 
     if searchinfo['totalhits'] == 0:
         if verbosity:
-            print('Not found, exiting')
+            logger.log('Not found, exiting', color=Logger.FAIL)
         return None
 
     # if exists, get the page id
     if searchresults[0]['title'].replace(',', '') == person:
         exists = True
-        if verbosity:
-            print('Found')
+        logger.log('Found')
         pageid = searchresults[0]['pageid']
 
     if not exists:
         return None
 
     # Obtain the wikimedia unique id
-    if verbosity:
-        print('Obtaining the wikimedia unique id')
+    logger.log('Obtaining the wikimedia unique id')
 
     PARAMS2 = {
         'action': 'query',
@@ -159,7 +161,7 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
     try:
         wikibase_id = R2.json()['query']['pages'][0]['pageprops']['wikibase_item']
     except KeyError:
-        print('Error getting wikimedia id, no further information can be accessd.')
+        logger.fail('Error getting wikimedia id, no further information can be accessd.')
         return [None, None, None, None, None, None]
 
     # Obtain the necessary information from wikibase
@@ -176,29 +178,26 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
                'props': 'claims',
                'formatversion': '2'}
 
-    if verbosity:
-        print('Fetching dates and places.')
+    logger.log('Fetching dates and places.')
 
     R3 = requests.get(url=URL2, params=PARAMS3)
     try:
         data = R3.json()['entities'][wikibase_id]['claims']
     except KeyError:
         if verbosity:
-            print('No claims for wikimedia id found, no further info can be obtained')
+            logger.fail('No claims for wikimedia id found, no further info can be obtained')
         return [None, None, None, None, None, None]
 
     try:
         dobraw = data['P569'][0]['mainsnak']['datavalue']['value']['time']  # Date of Birth
         pobid = data['P19'][0]['mainsnak']['datavalue']['value']['id']  # Place of Birth id
     except KeyError:
-        if verbosity:
-            print('Error fetching date of birth or place of birth id')
+        logger.fail('Error fetching date of birth or place of birth id')
     try:
         dodraw = data['P570'][0]['mainsnak']['datavalue']['value']['time']  # Date of Death
         podid = data['P20'][0]['mainsnak']['datavalue']['value']['id']  # Place of Death id
     except KeyError:
-        if verbosity:
-            print('Error fetching date of death or place of death id')
+        logger.fail('Error fetching date of death or place of death id')
 
     # Find places of birth from ids
     PARAMS3['props'] = 'labels|descriptions'
@@ -210,31 +209,27 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
     try:
         pob = R4.json()['entities'][pobid]['labels'][f'{locale}']['value']
     except KeyError:
-        if verbosity:
-            print('Error fetching place of birth description')
+        logger.fail('Error fetching place of birth description')
     try:
         pod = R5.json()['entities'][podid]['labels'][f'{locale}']['value']
     except KeyError:
-        if verbosity:
-            print('Error fetching place of death description')
+        logger.fail('Error fetching place of death description')
 
     # Get descriptions
     try:
         pobdesc = R4.json()['entities'][pobid]['descriptions'][f'{locale}']['value']
     except KeyError:
-        if verbosity:
-            print('Error fetching place of birth description')
+        logger.fail('Error fetching place of birth description')
 
     try:
         poddesc = R5.json()['entities'][podid]['descriptions'][f'{locale}']['value']
     except KeyError:
-        if verbosity:
-            print('Place of Death Description not found')
+        logger.fail('Place of Death Description not found')
     # Convert the datetimes from str to datetime
     dob = datetime.strptime(dobraw, '+%Y-%m-%dT%H:%M:%SZ')
     dod = datetime.strptime(dodraw, '+%Y-%m-%dT%H:%M:%SZ')
     if verbosity:
-        print('Done!')
+        logger.log('Done!')
     return [dob, dod, pob, pod, pobdesc, poddesc]
 
 
@@ -338,15 +333,13 @@ async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibE
     return entries
 
 
-def tester():
-    """Temporary testing function."""
+if __name__ == '__main__':
     persontest1 = 'Русаков Михаил Петрович'
     # persontest2 = 'Обручев Владимир Афанасьевич'
     # persontest3 = 'Сумгин Михаил Иванович'
     # persontest4 = 'Вознесенский Владимир Александрович'
+    # persontest5 = "Gibberish Gargle Васильевич"
+    # res = wikisearch(persontest1, verbosity=True)
     res = asyncio.run(rslsearch(persontest1, verbosity=True, parallel=True))
     # print('\n'.join(list(map(str, r  es))))
     print(res)
-
-
-tester()
