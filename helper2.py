@@ -10,7 +10,23 @@ def rgo_check(name):
         page_p = soup.find("main", class_="main ml-md-5 mr-md-5 mr-xl-0 ml-xl-0").find("p").string
         return page_p
     except:
-        return URL
+        res = {}
+        limit = str(soup.find("div", class_="pagination").find("span", class_="c-mid-blue").string).split(" ")[-1]
+
+        for j in range(0, int(limit), 10):
+            urlsec = requests.get(f"https://elib.rgo.ru/simple-search?query=Обручев&sort_by=score&order=desc&rpp=10&etal=0&start={j}").text
+            sou = BeautifulSoup(urlsec, "lxml")
+            textres = sou.find("div", class_="discovery-result-results").find_all("b")
+            urlres = sou.find("div", class_="discovery-result-results").find_all(class_="button button-primary mt-2")
+            cnt = 0
+        
+            for i in textres:
+                textres[cnt] = i.string.replace("\n                                ", "")
+                urlres[cnt] = f"https://elib.rgo.ru/{str(urlres[cnt])[45:68]}"
+                res[textres[cnt]] = str(urlres[cnt])
+                cnt += 1
+
+        return res
                
 def rnb_check(name):
     URL = f"https://nlr.ru/e-case3/sc2.php/web_gak/ss?text={name}x=15&y=17"
@@ -26,4 +42,4 @@ def rnb_check(name):
     return res2 
 
 
-print(rnb_check("пенис"))
+print(rgo_check("Обручев"))
