@@ -28,7 +28,7 @@ def rgo_check(name):
 
         return res
                
-def rnb_check(name):
+""" def rnb_check(name):
     URL = f"https://nlr.ru/e-case3/sc2.php/web_gak/ss?text={name}x=15&y=17"
     res = []
     res2 = []
@@ -39,7 +39,39 @@ def rnb_check(name):
         if name in str(i.string):
             res.append(i.string)
         res2.append(str(i.string))
-    return res2 
+    return res2  """
+
+def nnr_check(name):
+    URL = f"http://e-heritage.ru/Catalog/FindPerson"
+    data = {
+    'maxRow': '1',
+    'lang': 'ru',
+    'ssf0': '1',
+    'opt0': '2',
+    'val0': name.split()[0],
+    'cov1': '1',
+    'ssf1': '2',
+    'opt1': '2',
+    'val1': name.split()[1],
+    'nuDocsOnPage': '10',
+    'sortOrder': '---'}
+    res = {}
+    htm = requests.post(URL, data=data).text 
+    soup = BeautifulSoup(htm, "lxml")
+    urlres = soup.find_all("a")
+    textres = [0] * len(urlres)
+    cnt = 0
+    """     for j in urlres:
+        suburl = str(j["href"])
+        suburl = requests.get(f"http://e-heritage.ru{suburl}").text
+        sou = BeautifulSoup(suburl, "lxml")
+        biores = sou.find_all("div", string="Дата рождения:") """
+    for i in urlres:
+        urlres[cnt] = i["href"]
+        textres[cnt] = i.string
+        res[textres[cnt]] = urlres[cnt]
+        cnt += 1
+    return res
 
 
-print(rgo_check("Обручев"))
+print(nnr_check("Обручев Владимир Афанасьевич"))
