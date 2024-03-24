@@ -44,34 +44,38 @@ def rgo_check(name):
 def nnr_check(name):
     URL = f"http://e-heritage.ru/Catalog/FindPerson"
     data = {
-    'maxRow': '1',
-    'lang': 'ru',
-    'ssf0': '1',
-    'opt0': '2',
-    'val0': name.split()[0],
-    'cov1': '1',
-    'ssf1': '2',
-    'opt1': '2',
-    'val1': name.split()[1],
-    'nuDocsOnPage': '10',
-    'sortOrder': '---'}
+        'maxRow': '1',
+        'lang': 'ru',
+        'ssf0': '1',
+        'opt0': '2',
+        'val0': name.split()[0],
+        'cov1': '1',
+        'ssf1': '2',
+        'opt1': '2',
+        'val1': name.split()[1],
+        'nuDocsOnPage': '10',
+        'sortOrder': '---'}
     res = {}
     htm = requests.post(URL, data=data).text 
     soup = BeautifulSoup(htm, "lxml")
     urlres = soup.find_all("a")
     textres = [0] * len(urlres)
-    cnt = 0
-    """     for j in urlres:
+
+    for j in urlres:
         suburl = str(j["href"])
         suburl = requests.get(f"http://e-heritage.ru{suburl}").text
         sou = BeautifulSoup(suburl, "lxml")
-        biores = sou.find_all("div", string="Дата рождения:") """
-    for i in urlres:
+        biores1 = sou.find_all("div", class_="col-4 element_label")
+        biores2 = sou.find_all("div", class_="col-6 element_value")
+
+        for cnt in range(0, len(biores1)):
+            print(biores1[cnt].string, biores2[cnt].string)
+
+    """     for i in urlres:
         urlres[cnt] = i["href"]
         textres[cnt] = i.string
         res[textres[cnt]] = urlres[cnt]
-        cnt += 1
-    return res
-
+        cnt += 1 """
+    
 
 print(nnr_check("Обручев Владимир Афанасьевич"))
