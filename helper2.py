@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+import re
 
 
 def rgo_check(name):
@@ -56,10 +57,10 @@ def nnr_check(name):
         'nuDocsOnPage': '10',
         'sortOrder': '---'}
     res = {}
+    crdres = {}
     htm = requests.post(URL, data=data).text 
     soup = BeautifulSoup(htm, "lxml")
     urlres = soup.find_all("a")
-    textres = [0] * len(urlres)
 
     for j in urlres:
         suburl = str(j["href"])
@@ -67,15 +68,27 @@ def nnr_check(name):
         sou = BeautifulSoup(suburl, "lxml")
         biores1 = sou.find_all("div", class_="col-4 element_label")
         biores2 = sou.find_all("div", class_="col-6 element_value")
+        crdhead = sou.find_all("div", class_="card-header")
+        crdbody = sou.find_all("div", class_=re.compile("card-body*"))
 
-        for cnt in range(0, len(biores1)):
-            print(biores1[cnt].string, biores2[cnt].string)
+        for cnt in range(0, len(biores1)-1):
+            res[biores1[cnt].string.replace("\r\n                ", "").replace("    ", "")]\
+                = biores2[cnt].string.replace("\r\n                ", "").replace("    ", "")
+            
+        for crd in range(0, len(crdhead)):
+            divchek = " ".join(list(map(lambda x: x.string, crdbody[crd].find_all("div"))))
+            lichek = list(map(lambda x: [x.find("a").string.replace("\r\n                ", ""), x.find("a")["href"]] \
+                    if x.find("a")["href"][:3] == "htt" else \
+                    [x.find("a").string.replace("\r\n                ", ""), "http://e-heritage.ru" + x.find("a")["href"]], \
+                      crdbody[crd].find_all("li")))
+            if divchek == None or divchek == "":
+                crdres[re.search("[а-яА-Я\s]{3,}+", str(crdhead[crd])).group()] = lichek
+            else:
+                crdres[re.search("[а-яА-Я\s]{3,}+", str(crdhead[crd])).group()] = divchek
 
-    """     for i in urlres:
-        urlres[cnt] = i["href"]
-        textres[cnt] = i.string
-        res[textres[cnt]] = urlres[cnt]
-        cnt += 1 """
-    
+        res[biores1[-1].string.replace("\r\n                ", "").replace("    ", "")]\
+        = [i.string for i in biores2[-1].find_all("li")]
+
+        return res, crdres
 
 print(nnr_check("Обручев Владимир Афанасьевич"))
