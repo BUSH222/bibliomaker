@@ -392,13 +392,32 @@ def geoknigasearch(person, verbosity=False) -> (None | list[BibEntry]):
     return finbooks
 
 
+@handler
+def higeosearch(person, verbosity=False) -> bool:
+    """
+    ### Find out whether a person exists on higeo.ginras.ru.
+    ## Args:
+        * `person (str)` - name of the person to look up
+        * `verbosity (bool, default=False)` - [OPTIONAL] print additional information
+    ## Returns:
+        * `bool` - whether the record of the person exists or not
+    """
+    logger = Logger(verbosity=verbosity)
+    logger.log('Starting the search on the higeo.ginras.ru website')
+    r = requests.get(f"http://higeo.ginras.ru/cgi-bin/export.rb?template_name=_default.person&filter=\
+                     (COALESCE(person.name, '') = '{person}')&sort=person.author.name").text
+    logger.log('Done')
+    return person in r
+
+
 if __name__ == '__main__':
     persontest1 = 'Русаков Михаил Петрович'
     # persontest2 = 'Обручев Владимир Афанасьевич'
     # persontest3 = 'Сумгин Михаил Иванович'
     # persontest4 = 'Вознесенский Владимир Александрович'
-    persontest5 = "Gibberish Gargle Васильевич"
+    # persontest5 = "Gibberish Gargle Васильевич"
     # res = wikisearch(persontest1, verbosity=True)
     # res = asyncio.run(rslsearch(persontest1, verbosity=True, parallel=True))
-    res = geoknigasearch(persontest5, verbosity=True)
-    print('\n'.join(list(map(str, res))))
+    # res = geoknigasearch(persontest5, verbosity=True)
+    res = higeosearch(persontest1, verbosity=True)
+    print(res)
