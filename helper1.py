@@ -22,7 +22,7 @@ class BibEntry:
     * tome - the tome information of the document
 
     Methods:
-    * peek() - quickly print the contents of the entry
+    * __repr__ - to print
     * __str__ - convert the entire bibliographic entry to a string
     """
 
@@ -33,9 +33,9 @@ class BibEntry:
         self.physical_desc = physical_desc
         self.tome = tome
 
-    def peek(self):
+    def __repr__(self):
         """Print the contents of the entry, testing function"""
-        print(f'{self.authors} {self.title} // {self.source} {self.physical_desc} ! Том: {self.tome}')
+        return f'{self.authors} {self.title} // {self.source} {self.physical_desc} ! Том: {self.tome}'
 
     def __str__(self):
         """Return the contents of the entry."""
