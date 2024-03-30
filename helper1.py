@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 from functools import wraps
 from itertools import chain
+from bs4 import BeautifulSoup
 
 import aiohttp
 import requests
@@ -21,7 +22,7 @@ class BibEntry:
     * tome - the tome information of the document
 
     Methods:
-    * peek() - quickly print the contents of the entry
+    * __repr__ - to print
     * __str__ - convert the entire bibliographic entry to a string
     """
 
@@ -32,9 +33,9 @@ class BibEntry:
         self.physical_desc = physical_desc
         self.tome = tome
 
-    def peek(self):
+    def __repr__(self):
         """Print the contents of the entry, testing function"""
-        print(f'{self.authors} {self.title} // {self.source} {self.physical_desc} ! Том: {self.tome}')
+        return f'{self.authors} {self.title} // {self.source} {self.physical_desc} ! Том: {self.tome}'
 
     def __str__(self):
         """Return the contents of the entry."""
@@ -236,7 +237,7 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
 @async_handler
 async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibEntry]):
     """
-    ###Search for a person on the russian state library website.
+    ### Search for a person on the russian state library website.
     ## Args:
         * `person (str)` - name of the person to look up
         * `verbosity (bool, default=False)` - [OPTIONAL] print additional information
@@ -333,6 +334,82 @@ async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibE
     return entries
 
 
+@handler
+def geoknigasearch(person, verbosity=False) -> (None | list[BibEntry]):
+    """
+    ### Search for a person on the geokniga website.
+    ## Args:
+        * `person (str)` - name of the person to look up
+        * `verbosity (bool, default=False)` - [OPTIONAL] print additional information
+    ## Returns:
+        * `None` - this person does not exist on the geokniga website
+        * `list[BibEntry]` - list of bibliographical entries found on the geokniga website"""
+    pages = 1
+    surname, name, familyname = person.split()
+    URL = f"https://www.geokniga.org/books?field_author={surname}+{name[0]}.{familyname[0]}."
+
+    cnt = 0
+    books = []
+    finbooks = []
+
+    logger = Logger(verbosity=verbosity)
+    logger.log('Starting the geokniga search...')
+
+    r = requests.get(URL).text
+    soup = BeautifulSoup(r, "html.parser")
+    pages_raw = soup.find(name='li', class_='pager-last last')
+    logger.log('Looking for the total number of pages')
+
+    if pages_raw is not None:
+        pages = int(re.search(r"page=(\d*)", str(pages_raw)).group(1))+1
+    logger.log(f'Found {pages} pages, performing requests to get the data')
+    for i in range(pages):  # Obtain the necessary info
+        r = requests.get(f'{URL}&page={i}').text
+        soup = BeautifulSoup(r, "html.parser")
+        titles = soup.find_all(name='div', class_='book_body_title')
+        tomes = soup.find_all(name='div', class_='book_body_izdan_full')
+        authors = soup.find_all(name='div', class_='book_body_author')
+        publishers = soup.find_all(name='div', class_='book_body_izdat_full')
+        cnt += len(titles)
+        books.extend(list(zip(titles, tomes, authors, publishers)))
+    logger.log(f'Found {cnt} books, filtering the data')
+    books = list(map(list, books))
+
+    for i in range(len(books)):  # Cleanup
+        temptitles = re.search(r"<a\shref=.*?>(.*?)</a", str(books[i][0]), flags=re.DOTALL)
+        temptitles = temptitles.group(1) if temptitles else ''
+        temptomes = re.search(r"<div\sclass=.*?>(.*?)</div", str(books[i][1]), flags=re.DOTALL)
+        temptomes = temptomes.group(1).strip() if temptomes else ''
+        tempauthors = re.findall(r"<cpan class=.*?>(.*?)</cpan>", str(books[i][2]), flags=re.DOTALL)
+        tempauthors = tempauthors[0] if tempauthors else []
+        temppublishers = re.findall(r"click\(\);\">(.*?)</a>(.*?)</fieldset>", str(books[i][3]), flags=re.DOTALL)
+        temppublishers = temppublishers[0] if temppublishers else []
+        finbooks.append(BibEntry(authors=''.join(tempauthors), title=temptitles, physical_desc='',  # No physical desc
+                                 source=''.join(temppublishers), tome=temptomes))
+    logger.log('Done!')
+    if finbooks == []:
+        return None
+    return finbooks
+
+
+@handler
+def higeosearch(person, verbosity=False) -> bool:
+    """
+    ### Find out whether a person exists on higeo.ginras.ru.
+    ## Args:
+        * `person (str)` - name of the person to look up
+        * `verbosity (bool, default=False)` - [OPTIONAL] print additional information
+    ## Returns:
+        * `bool` - whether the record of the person exists or not
+    """
+    logger = Logger(verbosity=verbosity)
+    logger.log('Starting the search on the higeo.ginras.ru website')
+    r = requests.get(f"http://higeo.ginras.ru/cgi-bin/export.rb?template_name=_default.person&filter=\
+                     (COALESCE(person.name, '') = '{person}')&sort=person.author.name").text
+    logger.log('Done')
+    return person in r
+
+
 if __name__ == '__main__':
     persontest1 = 'Русаков Михаил Петрович'
     # persontest2 = 'Обручев Владимир Афанасьевич'
@@ -340,6 +417,7 @@ if __name__ == '__main__':
     # persontest4 = 'Вознесенский Владимир Александрович'
     # persontest5 = "Gibberish Gargle Васильевич"
     # res = wikisearch(persontest1, verbosity=True)
-    res = asyncio.run(rslsearch(persontest1, verbosity=True, parallel=True))
-    # print('\n'.join(list(map(str, r  es))))
+    # res = asyncio.run(rslsearch(persontest1, verbosity=True, parallel=True))
+    # res = geoknigasearch(persontest5, verbosity=True)
+    res = higeosearch(persontest1, verbosity=True)
     print(res)
