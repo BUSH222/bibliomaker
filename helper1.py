@@ -54,16 +54,21 @@ class Logger:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-    def __init__(self, verbosity: bool) -> None:
+    def __init__(self, verbosity: bool, pure=True) -> None:
         self.verbosity = verbosity
+        self.pure = pure
 
     def log(self, text, color=HEADER):
-        if self.verbosity:
+        if self.verbosity and not self.pure:
             print(f'{color} {text} {self.ENDC}')
+        elif self.verbosity and self.pure:
+            print(f'LOG: {text}')
 
     def fail(self, text, color=FAIL):
-        if self.verbosity:
+        if self.verbosity and not self.pure:
             print(f'{color} {text} {self.ENDC}')
+        elif self.verbosity and self.pure:
+            print(f'FAIL: {text}')
 
 
 def handler(func):
@@ -226,12 +231,9 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
         poddesc = R5.json()['entities'][podid]['descriptions'][f'{locale}']['value']
     except KeyError:
         logger.fail('Place of Death Description not found')
-    # Convert the datetimes from str to datetime
-    dob = datetime.strptime(dobraw, '+%Y-%m-%dT%H:%M:%SZ')
-    dod = datetime.strptime(dodraw, '+%Y-%m-%dT%H:%M:%SZ')
     if verbosity:
         logger.log('Done!')
-    return [dob, dod, pob, pod, pobdesc, poddesc]
+    return [dobraw, dodraw, pob, pod, pobdesc, poddesc]
 
 
 @async_handler
@@ -416,8 +418,9 @@ if __name__ == '__main__':
     # persontest3 = 'Сумгин Михаил Иванович'
     # persontest4 = 'Вознесенский Владимир Александрович'
     # persontest5 = "Gibberish Gargle Васильевич"
-    # res = wikisearch(persontest1, verbosity=True)
+    res = wikisearch(persontest1, verbosity=True)
     # res = asyncio.run(rslsearch(persontest1, verbosity=True, parallel=True))
+    # res = rslsearch(persontest1, verbosity=True, parallel=True)
     # res = geoknigasearch(persontest5, verbosity=True)
-    res = higeosearch(persontest1, verbosity=True)
+    # res = higeosearch(persontest1, verbosity=True)
     print(res)
