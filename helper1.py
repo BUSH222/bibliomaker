@@ -3,7 +3,6 @@
 import asyncio
 import json
 import re
-from datetime import datetime
 from functools import wraps
 from itertools import chain
 from bs4 import BeautifulSoup
@@ -127,7 +126,7 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
     # Initialising Variables
     logger = Logger(verbosity=verbosity)
     exists = False
-    pob, dob, pod, dod = None, None, None, None
+    pob, pod = None, None
     pobdesc, poddesc = None, None
 
     # Check if person exists in wiki
