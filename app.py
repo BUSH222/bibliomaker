@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import scrolledtext
+from tkinter.filedialog import asksaveasfile
 import sys
 from time import localtime, strftime
 import helper1 as h
@@ -41,8 +42,7 @@ def start():
     if geokniga_data is not None:
         lines.append('\n'.join(map(str, geokniga_data)))
 
-    with open('out.txt', 'w') as tempfile:
-        tempfile.writelines(lines)
+    file_save(lines)
 
 
 def update_button_text(percentage=None):
@@ -50,6 +50,14 @@ def update_button_text(percentage=None):
         start_button.config(text="Start")
     else:
         start_button.config(text=f"Start ({percentage}%)")
+
+
+def file_save(text):
+    f = asksaveasfile(mode='w', defaultextension=".txt")
+    if f is None:
+        return
+    f.writelines(text)
+    f.close()
 
 
 root = tk.Tk()
