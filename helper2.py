@@ -29,7 +29,7 @@ def rgo_check(name):
 
         return res
                
-""" def rnb_check(name):
+def rnb_check(name):
     URL = f"https://nlr.ru/e-case3/sc2.php/web_gak/ss?text={name}x=15&y=17"
     res = []
     res2 = []
@@ -40,7 +40,7 @@ def rgo_check(name):
         if name in str(i.string):
             res.append(i.string)
         res2.append(str(i.string))
-    return res2  """
+    return res2 
 
 def nnr_check(name):
     URL = f"http://e-heritage.ru/Catalog/FindPerson"
@@ -87,8 +87,8 @@ def nnr_check(name):
                 crdres[re.search("[а-яА-Я\s]{3,}+", str(crdhead[crd])).group()] = divchek
 
         res[biores1[-1].string.replace("\r\n                ", "").replace("    ", "")]\
-        = [i.string for i in biores2[-1].find_all("li")]
+                = [i.string for i in biores2[-1].find_all("li")]
 
         return res, crdres
 
-print(nnr_check("Обручев Владимир Афанасьевич"))
+print(rgo_check("Обручев Владимир Афанасьевич"))
