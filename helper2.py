@@ -30,17 +30,31 @@ def rgo_check(name):
         return res
                
 def rnb_check(name):
-    URL = f"https://nlr.ru/e-case3/sc2.php/web_gak/ss?text={name}x=15&y=17"
-    res = []
+    URL = f"https://nlr.ru/e-case3/sc2.php/web_gak/ss?text={name}&x=15&y=17"
+    res = {}
     res2 = []
     htm = requests.get(URL).text
     soup = BeautifulSoup(htm, "lxml")
-    cards = soup.find("div", id="row1textmain").find("div", class_="text").find_all("a", href_="")
-    for i in cards:
+    allcards = soup.find("div", id="row1textmain").find("div", class_="text").find_all("a", href_="")
+    for i in allcards:
+
         if name in str(i.string):
-            res.append(i.string)
-        res2.append(str(i.string))
-    return res2 
+            # res[i.string] = "https//nlr.ru/e-case3/sc2.php/web_gak{}".format(str(i["href"])[2:])
+            URLCRDS = "https://nlr.ru/e-case3/sc2.php/web_gak{}".format(str(i["href"])[2:])
+            htmcrds = requests.get(URLCRDS).text
+            soupcrds = BeautifulSoup(htmcrds, "lxml")
+            heading = soupcrds.find("div", class_="center").find("b").string
+            limit = int(heading.split(" ")[-1][:-1])
+
+            for j in range(1, limit + 1):
+                URLCRD = URLCRDS[:-1] + str(j)
+                htmcrd = requests.get(URLCRD).text
+                soupcrd = BeautifulSoup(htmcrd, "lxml")
+                heading = soupcrd.find("div", class_="center").find("b").string
+                pict = soupcrd.find("img", class_="card")["src"]
+                img_data = requests.get(f"https://nlr.ru{pict}").content
+                with open(f'image/{j}.jpg', 'wb') as handler:
+                    handler.write(img_data)
 
 def nnr_check(name):
     URL = f"http://e-heritage.ru/Catalog/FindPerson"
@@ -91,4 +105,4 @@ def nnr_check(name):
 
         return res, crdres
 
-print(rgo_check("Обручев Владимир Афанасьевич"))
+print(rnb_check("Обручев Владимир Афанасьевич"))
