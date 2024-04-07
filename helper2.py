@@ -111,10 +111,10 @@ def nnr_check(name):
 def spb_check(name):
     URL = 'https://primo.nlr.ru/primo_library/libweb/action/search.do'
     params = {
-    'fn': 'search',
-    'vl(freeText0)': 'Русаков Михаил Петрович'
+        'fn': 'search',
+        'vl(freeText0)': name
     }
-    htm = requests.get(URL).text
+    htm = requests.get(URL, params=params).text
     soup = BeautifulSoup(htm, "lxml")
     crd = soup.find_all("h2", class_="EXLResultTitle")
     for i in crd:
