@@ -7,10 +7,9 @@ def rgo_check(name):
     URL = f"https://elib.rgo.ru/simple-search?location=%2F&query={name}&rpp=10&sort_by=score&order=desc"
     htm = requests.get(URL).text
     soup = BeautifulSoup(htm, "lxml")
-    try:
-        page_p = soup.find("main", class_="main ml-md-5 mr-md-5 mr-xl-0 ml-xl-0").find("p").string
-        return page_p
-    except:
+    page_p = soup.find("main", class_="main ml-md-5 mr-md-5 mr-xl-0 ml-xl-0").find("p")
+
+    if page_p == None:
         res = {}
         limit = str(soup.find("div", class_="pagination").find("span", class_="c-mid-blue").string).split(" ")[-1]
 
@@ -26,9 +25,11 @@ def rgo_check(name):
                 urlres[cnt] = f"https://elib.rgo.ru/{str(urlres[cnt])[45:68]}"
                 res[textres[cnt]] = str(urlres[cnt])
                 cnt += 1
-
         return res
+    else:
+        return page_p.string
                
+
 def rnb_check(name):
     URL = f"https://nlr.ru/e-case3/sc2.php/web_gak/ss?text={name}&x=15&y=17"
     res = {}
@@ -53,8 +54,9 @@ def rnb_check(name):
                 heading = soupcrd.find("div", class_="center").find("b").string
                 pict = soupcrd.find("img", class_="card")["src"]
                 img_data = requests.get(f"https://nlr.ru{pict}").content
-                with open(f'image/{j}.jpg', 'wb') as handler:
+                with open(f'image/{heading[:-1]}.jpg', 'wb') as handler:
                     handler.write(img_data)
+
 
 def nnr_check(name):
     URL = f"http://e-heritage.ru/Catalog/FindPerson"
@@ -95,6 +97,7 @@ def nnr_check(name):
                     if x.find("a")["href"][:3] == "htt" else \
                     [x.find("a").string.replace("\r\n                ", ""), "http://e-heritage.ru" + x.find("a")["href"]], \
                       crdbody[crd].find_all("li")))
+            
             if divchek == None or divchek == "":
                 crdres[re.search("[а-яА-Я\s]{3,}+", str(crdhead[crd])).group()] = lichek
             else:
@@ -105,4 +108,20 @@ def nnr_check(name):
 
         return res, crdres
 
-print(rnb_check("Обручев Владимир Афанасьевич"))
+def spb_check(name):
+    URL = f"https://primo.nlr.ru/primo_library/libweb/action/search.do?fn=search&ct= \
+            search&initialSearch=true&mode=Basic&tab=default_tab&indx=1&dum=true&srt= \
+            rank&vid=07NLR_VU1&frbg=&vl%28freeText0%29={name}&scp.scps=scope%3A%28MAIN_07NLR%29"
+    htm = requests.get(URL).text
+    soup = BeautifulSoup(htm, "lxml")
+    crd = soup.find_all("h2", class_="EXLResultTitle")
+    for i in crd:
+        suburl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
+        sou = BeautifulSoup(suburl, "lxml")
+        descrip = sou.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
+            find("span", class_="EXLDetailsDisplayVal")
+        names = descrip.find_all("span", class_="searchword")
+        print(sou.find("h1", class_="EXLResultTitle"))
+        print("описание{}".format(descrip.string))
+
+spb_check("Русаков М.П")
