@@ -109,9 +109,11 @@ def nnr_check(name):
         return res, crdres
 
 def spb_check(name):
-    URL = f"https://primo.nlr.ru/primo_library/libweb/action/search.do?fn=search&ct= \
-            search&initialSearch=true&mode=Basic&tab=default_tab&indx=1&dum=true&srt= \
-            rank&vid=07NLR_VU1&frbg=&vl%28freeText0%29={name}&scp.scps=scope%3A%28MAIN_07NLR%29"
+    URL = 'https://primo.nlr.ru/primo_library/libweb/action/search.do'
+    params = {
+    'fn': 'search',
+    'vl(freeText0)': 'Русаков Михаил Петрович'
+    }
     htm = requests.get(URL).text
     soup = BeautifulSoup(htm, "lxml")
     crd = soup.find_all("h2", class_="EXLResultTitle")
@@ -124,4 +126,4 @@ def spb_check(name):
         print(sou.find("h1", class_="EXLResultTitle"))
         print("описание{}".format(descrip.string))
 
-spb_check("Русаков М.П")
+spb_check("Русаков М.П.")
