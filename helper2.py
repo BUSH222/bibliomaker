@@ -1,68 +1,71 @@
 import requests
 from bs4 import BeautifulSoup
 import re
-from helper1 import BibEntry
+from helper1 import Logger
 
 
 def rgo_check(name):
     URL = f"https://elib.rgo.ru/simple-search?location=%2F&query={name}&rpp=10&sort_by=score&order=desc"
     htm = requests.get(URL).text
-    soup = BeautifulSoup(htm, "lxml")
+    soup = BeautifulSoup(htm, "html.parser")
     page_p = soup.find("main", class_="main ml-md-5 mr-md-5 mr-xl-0 ml-xl-0").find("p")
 
-    if page_p == None:
+    if page_p is None:
         res = {}
         limit = str(soup.find("div", class_="pagination").find("span", class_="c-mid-blue").string).split(" ")[-1]
 
+        params = {
+            'query': name,
+            'rpp': '10',
+            'sort_by': 'score',
+            'order': 'desc',
+            'etal': '0',
+            'start': '0'
+        }
         for j in range(0, int(limit), 10):
-            urlsec = requests.get(f"https://elib.rgo.ru/simple-search?query=Обручев&sort_by=score&order=desc&rpp=10&etal=0&start={j}").text
-            sou = BeautifulSoup(urlsec, "lxml")
+            params['start'] = str(j)
+            urlsec = requests.get("https://elib.rgo.ru/simple-search", params=params).text
+            sou = BeautifulSoup(urlsec, "html.parser")
             textres = sou.find("div", class_="discovery-result-results").find_all("b")
             urlres = sou.find("div", class_="discovery-result-results").find_all(class_="button button-primary mt-2")
             cnt = 0
-        
             for i in textres:
                 textres[cnt] = i.string.replace("\n                                ", "")
                 urlres[cnt] = f"https://elib.rgo.ru/{str(urlres[cnt])[45:68]}"
                 res[textres[cnt]] = str(urlres[cnt])
                 cnt += 1
-
-
         return res
     else:
         return page_p.string
-               
+
 
 def rnb_check(name):
     URL = f"https://nlr.ru/e-case3/sc2.php/web_gak/ss?text={name}&x=15&y=17"
-    res = {}
-    res2 = []
     htm = requests.get(URL).text
-    soup = BeautifulSoup(htm, "lxml")
+    soup = BeautifulSoup(htm, "html.parser")
     allcards = soup.find("div", id="row1textmain").find("div", class_="text").find_all("a", href_="")
+    out = {}
     for i in allcards:
-
         if name in str(i.string):
             # res[i.string] = "https//nlr.ru/e-case3/sc2.php/web_gak{}".format(str(i["href"])[2:])
             URLCRDS = "https://nlr.ru/e-case3/sc2.php/web_gak{}".format(str(i["href"])[2:])
             htmcrds = requests.get(URLCRDS).text
-            soupcrds = BeautifulSoup(htmcrds, "lxml")
+            soupcrds = BeautifulSoup(htmcrds, "html.parser")
             heading = soupcrds.find("div", class_="center").find("b").string
             limit = int(heading.split(" ")[-1][:-1])
 
             for j in range(1, limit + 1):
                 URLCRD = URLCRDS[:-1] + str(j)
                 htmcrd = requests.get(URLCRD).text
-                soupcrd = BeautifulSoup(htmcrd, "lxml")
+                soupcrd = BeautifulSoup(htmcrd, "html.parser")
                 heading = soupcrd.find("div", class_="center").find("b").string
                 pict = soupcrd.find("img", class_="card")["src"]
-                img_data = requests.get(f"https://nlr.ru{pict}").content
-                with open(f'image/{heading[:-1]}.jpg', 'wb') as handler:
-                    handler.write(img_data)
+                print(pict)
+                out[heading[:-1]] = f'https://nlr.ru{pict}'
 
 
 def nnr_check(name):
-    URL = f"http://e-heritage.ru/Catalog/FindPerson"
+    URL = "http://e-heritage.ru/Catalog/FindPerson"
     data = {
         'maxRow': '1',
         'lang': 'ru',
@@ -77,14 +80,14 @@ def nnr_check(name):
         'sortOrder': '---'}
     res = {}
     crdres = {}
-    htm = requests.post(URL, data=data).text 
-    soup = BeautifulSoup(htm, "lxml")
+    htm = requests.post(URL, data=data).text
+    soup = BeautifulSoup(htm, "html.parser")
     urlres = soup.find_all("a")
 
     for j in urlres:
         suburl = str(j["href"])
         suburl = requests.get(f"http://e-heritage.ru{suburl}").text
-        sou = BeautifulSoup(suburl, "lxml")
+        sou = BeautifulSoup(suburl, "html.parser")
         biores1 = sou.find_all("div", class_="col-4 element_label")
         biores2 = sou.find_all("div", class_="col-6 element_value")
         crdhead = sou.find_all("div", class_="card-header")
@@ -93,23 +96,23 @@ def nnr_check(name):
         for cnt in range(0, len(biores1)-1):
             res[biores1[cnt].string.replace("\r\n                ", "").replace("    ", "")]\
                 = biores2[cnt].string.replace("\r\n                ", "").replace("    ", "")
-            
         for crd in range(0, len(crdhead)):
             divchek = " ".join(list(map(lambda x: x.string, crdbody[crd].find_all("div"))))
-            lichek = list(map(lambda x: [x.find("a").string.replace("\r\n                ", ""), x.find("a")["href"]] \
-                    if x.find("a")["href"][:3] == "htt" else \
-                    [x.find("a").string.replace("\r\n                ", ""), "http://e-heritage.ru" + x.find("a")["href"]], \
-                      crdbody[crd].find_all("li")))
-            
-            if divchek == None or divchek == "":
-                crdres[re.search("[а-яА-Я\s]{3,}+", str(crdhead[crd])).group()] = lichek
+            lichek = list(map(lambda x: [x.find("a").string.replace("\r\n                ", ""), x.find("a")["href"]]
+                              if x.find("a")["href"][:3] == "htt" else
+                              [x.find("a").string.replace("\r\n                ", ""),
+                               "http://e-heritage.ru" + x.find("a")["href"]],
+                              crdbody[crd].find_all("li")))
+            if divchek is None or divchek == "":
+                crdres[re.search(r"[а-яА-Я\s]{3,}+", str(crdhead[crd])).group()] = lichek
             else:
-                crdres[re.search("[а-яА-Я\s]{3,}+", str(crdhead[crd])).group()] = divchek
+                crdres[re.search(r"[а-яА-Я\s]{3,}+", str(crdhead[crd])).group()] = divchek
 
-        res[biores1[-1].string.replace("\r\n                ", "").replace("    ", "")]\
-                = [i.string for i in biores2[-1].find_all("li")]
+        res[biores1[-1].string.replace("\r\n                ", "").replace("    ", "")] = \
+            [i.string for i in biores2[-1].find_all("li")]
 
         return res, crdres
+
 
 def spb_check(name):
     URL = 'https://primo.nlr.ru/primo_library/libweb/action/search.do'
@@ -118,23 +121,24 @@ def spb_check(name):
         'vl(freeText0)': name
     }
     htm = requests.get(URL, params=params).text
-    soup = BeautifulSoup(htm, "lxml")
+    soup = BeautifulSoup(htm, "html.parser")
     crd = soup.find_all("h2", class_="EXLResultTitle")
     headres = []
     bodyres = []
     for i in crd:
-        suburl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
-        sou = BeautifulSoup(suburl, "lxml")
+        surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
+        sou = BeautifulSoup(surl, "html.parser")
         descrip = sou.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
             find("span", class_="EXLDetailsDisplayVal")
-        while descrip.string == None:
-            suburl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
-            sou = BeautifulSoup(suburl, "lxml")
+        while descrip.string is None:
+            surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
+            sou = BeautifulSoup(surl, "html.parser")
             descrip = sou.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
-            find("span", class_="EXLDetailsDisplayVal")
+                find("span", class_="EXLDetailsDisplayVal")
         headres.append(sou.find("h1", class_="EXLResultTitle").string)
         bodyres.append(descrip.string)
     return headres, bodyres
 
 
-print(spb_check("Обручев"))
+if __name__ == "__main__":
+    print(rnb_check('Обручев Владимир Афанасьевич'))
