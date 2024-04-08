@@ -5,6 +5,7 @@ import sys
 from time import localtime, strftime
 import helper1 as h
 import asyncio
+import threading
 
 
 class StdoutRedirector:
@@ -23,7 +24,6 @@ def start():
     name = entry_name.get()
     surname = entry_surname.get()
     patronymic = entry_patronymic.get()
-    # fields_of_work = entry_fields_of_work.get()
     person = ' '.join([name, surname, patronymic])
     # Placeholder
     wiki_info = h.wikisearch(person=person, verbosity=True)
@@ -32,10 +32,14 @@ def start():
     geokniga_data = h.geoknigasearch(person=person, verbosity=True)
     lines = []
     if wiki_info is not None:
-        lines.append('\n'.join(wiki_info))
+        lines.append('Wikipedia information found:\n')
+        lines.append(f'Date of Birth: {wiki_info[0]} ; Date of death: {wiki_info[1]}\n')
+        lines.append(f'Place of Birth: {wiki_info[2]} ; Description: {wiki_info[4]}\n')
+        lines.append(f'Place of Death: {wiki_info[3]} ; Description: {wiki_info[5]}\n')
         lines.append('\n\n\n\n')
-    lines.append(str(higeo_info))
+    lines.append(f'Person exists in the higeo database: {higeo_info}')
     lines.append('\n\n\n\n')
+    lines.append('Bibliographical info:\n\n')
     if rsl_data is not None:
         lines.append('\n'.join(map(str, rsl_data)))
         lines.append('\n\n\n\n')
@@ -79,7 +83,11 @@ entry_patronymic.grid(row=2, column=1)
 tk.Label(root, text="Keywords").grid(row=3, column=0)
 entry_fields_of_work = tk.Entry(root)
 entry_fields_of_work.grid(row=3, column=1)
-start_button = tk.Button(root, text="Start", command=start)
+
+t = threading.Thread(target=start, name="Start")
+t.daemon = True
+
+start_button = tk.Button(root, text="Start", command=lambda: t.start())
 start_button.grid(row=4, columnspan=2)
 
 # For Logs
