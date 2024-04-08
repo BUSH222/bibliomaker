@@ -3,7 +3,6 @@
 import asyncio
 import json
 import re
-from datetime import datetime
 from functools import wraps
 from itertools import chain
 from bs4 import BeautifulSoup
@@ -54,16 +53,21 @@ class Logger:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-    def __init__(self, verbosity: bool) -> None:
+    def __init__(self, verbosity: bool, pure=True) -> None:
         self.verbosity = verbosity
+        self.pure = pure
 
     def log(self, text, color=HEADER):
-        if self.verbosity:
+        if self.verbosity and not self.pure:
             print(f'{color} {text} {self.ENDC}')
+        elif self.verbosity and self.pure:
+            print(f'LOG: {text}')
 
     def fail(self, text, color=FAIL):
-        if self.verbosity:
+        if self.verbosity and not self.pure:
             print(f'{color} {text} {self.ENDC}')
+        elif self.verbosity and self.pure:
+            print(f'FAIL: {text}')
 
 
 def handler(func):
@@ -122,7 +126,7 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
     # Initialising Variables
     logger = Logger(verbosity=verbosity)
     exists = False
-    pob, dob, pod, dod = None, None, None, None
+    pob, pod = None, None
     pobdesc, poddesc = None, None
 
     # Check if person exists in wiki
@@ -226,12 +230,9 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
         poddesc = R5.json()['entities'][podid]['descriptions'][f'{locale}']['value']
     except KeyError:
         logger.fail('Place of Death Description not found')
-    # Convert the datetimes from str to datetime
-    dob = datetime.strptime(dobraw, '+%Y-%m-%dT%H:%M:%SZ')
-    dod = datetime.strptime(dodraw, '+%Y-%m-%dT%H:%M:%SZ')
     if verbosity:
         logger.log('Done!')
-    return [dob, dod, pob, pod, pobdesc, poddesc]
+    return [dobraw, dodraw, pob, pod, pobdesc, poddesc]
 
 
 @async_handler
@@ -381,10 +382,10 @@ def geoknigasearch(person, verbosity=False) -> (None | list[BibEntry]):
         temptomes = re.search(r"<div\sclass=.*?>(.*?)</div", str(books[i][1]), flags=re.DOTALL)
         temptomes = temptomes.group(1).strip() if temptomes else ''
         tempauthors = re.findall(r"<cpan class=.*?>(.*?)</cpan>", str(books[i][2]), flags=re.DOTALL)
-        tempauthors = tempauthors[0] if tempauthors else []
+        tempauthors = tempauthors if tempauthors else []
         temppublishers = re.findall(r"click\(\);\">(.*?)</a>(.*?)</fieldset>", str(books[i][3]), flags=re.DOTALL)
         temppublishers = temppublishers[0] if temppublishers else []
-        finbooks.append(BibEntry(authors=''.join(tempauthors), title=temptitles, physical_desc='',  # No physical desc
+        finbooks.append(BibEntry(authors=' '.join(tempauthors), title=temptitles, physical_desc='',  # No physical desc
                                  source=''.join(temppublishers), tome=temptomes))
     logger.log('Done!')
     if finbooks == []:
@@ -418,6 +419,7 @@ if __name__ == '__main__':
     # persontest5 = "Gibberish Gargle Васильевич"
     # res = wikisearch(persontest1, verbosity=True)
     # res = asyncio.run(rslsearch(persontest1, verbosity=True, parallel=True))
-    # res = geoknigasearch(persontest5, verbosity=True)
-    res = higeosearch(persontest1, verbosity=True)
+    # res = rslsearch(persontest1, verbosity=True, parallel=True)
+    res = geoknigasearch(persontest1, verbosity=True)
+    # res = higeosearch(persontest1, verbosity=True)
     print(res)
