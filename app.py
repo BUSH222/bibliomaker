@@ -11,7 +11,7 @@ import threading
 class StdoutRedirector:
     def __init__(self, text_widget):
         self.text_widget = text_widget
-        self.write(f"Welcome to bibliomaker!\nRight now it is {strftime('%H:%M:%S', localtime())}.")
+        self.write(f"Welcome to bibliomaker!\nRight now it is {strftime('%H:%M:%S', localtime())}.\n")
 
     def write(self, string):
         self.text_widget.config(state='normal')
@@ -65,7 +65,7 @@ def file_save(text):
 
 
 root = tk.Tk()
-root.title("Title Label")
+root.title("Bibliomaker")
 root.resizable(False, False)
 
 tk.Label(root, text="Name").grid(row=0, column=0)

@@ -382,10 +382,10 @@ def geoknigasearch(person, verbosity=False) -> (None | list[BibEntry]):
         temptomes = re.search(r"<div\sclass=.*?>(.*?)</div", str(books[i][1]), flags=re.DOTALL)
         temptomes = temptomes.group(1).strip() if temptomes else ''
         tempauthors = re.findall(r"<cpan class=.*?>(.*?)</cpan>", str(books[i][2]), flags=re.DOTALL)
-        tempauthors = tempauthors[0] if tempauthors else []
+        tempauthors = tempauthors if tempauthors else []
         temppublishers = re.findall(r"click\(\);\">(.*?)</a>(.*?)</fieldset>", str(books[i][3]), flags=re.DOTALL)
         temppublishers = temppublishers[0] if temppublishers else []
-        finbooks.append(BibEntry(authors=''.join(tempauthors), title=temptitles, physical_desc='',  # No physical desc
+        finbooks.append(BibEntry(authors=' '.join(tempauthors), title=temptitles, physical_desc='',  # No physical desc
                                  source=''.join(temppublishers), tome=temptomes))
     logger.log('Done!')
     if finbooks == []:
@@ -417,9 +417,9 @@ if __name__ == '__main__':
     # persontest3 = 'Сумгин Михаил Иванович'
     # persontest4 = 'Вознесенский Владимир Александрович'
     # persontest5 = "Gibberish Gargle Васильевич"
-    res = wikisearch(persontest1, verbosity=True)
+    # res = wikisearch(persontest1, verbosity=True)
     # res = asyncio.run(rslsearch(persontest1, verbosity=True, parallel=True))
     # res = rslsearch(persontest1, verbosity=True, parallel=True)
-    # res = geoknigasearch(persontest5, verbosity=True)
+    res = geoknigasearch(persontest1, verbosity=True)
     # res = higeosearch(persontest1, verbosity=True)
     print(res)
