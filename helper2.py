@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import re
+from helper1 import BibEntry
 
 
 def rgo_check(name):
@@ -25,6 +26,8 @@ def rgo_check(name):
                 urlres[cnt] = f"https://elib.rgo.ru/{str(urlres[cnt])[45:68]}"
                 res[textres[cnt]] = str(urlres[cnt])
                 cnt += 1
+
+
         return res
     else:
         return page_p.string
@@ -126,4 +129,5 @@ def spb_check(name):
         print(sou.find("h1", class_="EXLResultTitle"))
         print("описание{}".format(descrip.string))
 
-spb_check("Русаков М.П.")
+
+print(rinc_check("Обручев"))
