@@ -120,14 +120,21 @@ def spb_check(name):
     htm = requests.get(URL, params=params).text
     soup = BeautifulSoup(htm, "lxml")
     crd = soup.find_all("h2", class_="EXLResultTitle")
+    headres = []
+    bodyres = []
     for i in crd:
         suburl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
         sou = BeautifulSoup(suburl, "lxml")
         descrip = sou.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
             find("span", class_="EXLDetailsDisplayVal")
-        names = descrip.find_all("span", class_="searchword")
-        print(sou.find("h1", class_="EXLResultTitle"))
-        print("описание{}".format(descrip.string))
+        while descrip.string == None:
+            suburl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
+            sou = BeautifulSoup(suburl, "lxml")
+            descrip = sou.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
+            find("span", class_="EXLDetailsDisplayVal")
+        headres.append(sou.find("h1", class_="EXLResultTitle").string)
+        bodyres.append(descrip.string)
+    return headres, bodyres
 
 
-print(rinc_check("Обручев"))
+print(spb_check("Обручев"))
