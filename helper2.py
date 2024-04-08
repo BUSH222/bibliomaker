@@ -60,8 +60,8 @@ def rnb_check(name):
                 soupcrd = BeautifulSoup(htmcrd, "html.parser")
                 heading = soupcrd.find("div", class_="center").find("b").string
                 pict = soupcrd.find("img", class_="card")["src"]
-                print(pict)
                 out[heading[:-1]] = f'https://nlr.ru{pict}'
+    return out
 
 
 def nnr_check(name):
@@ -141,4 +141,4 @@ def spb_check(name):
 
 
 if __name__ == "__main__":
-    print(rnb_check('Обручев Владимир Афанасьевич'))
+    print('\n'.join([f'{key}:   {value}' for key, value in rnb_check('Обручев Владимир Афанасьевич').items()]))

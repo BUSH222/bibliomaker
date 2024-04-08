@@ -3,8 +3,9 @@ from tkinter import scrolledtext
 from tkinter.filedialog import asksaveasfile
 import sys
 from time import localtime, strftime
-import helper1 as h
 import asyncio
+import helper1 as h
+import helper2 as h2
 import threading
 
 
@@ -24,12 +25,16 @@ def start():
     name = entry_name.get()
     surname = entry_surname.get()
     patronymic = entry_patronymic.get()
-    person = ' '.join([name, surname, patronymic])
-    # Placeholder
+    person = ' '.join([surname, name, patronymic]).strip()
     wiki_info = h.wikisearch(person=person, verbosity=True)
     higeo_info = h.higeosearch(person=person, verbosity=True)
     rsl_data = asyncio.run(h.rslsearch(person=person, verbosity=True, parallel=True))
     geokniga_data = h.geoknigasearch(person=person, verbosity=True)
+    rgo_data = h2.rgo_check(name=person)
+    rnb_data = h2.rnb_check(name=person)  # pics
+    nnr_data = h2.nnr_check(name=person)
+    spb_data = h2.spb_check(name=person)
+
     lines = []
     if wiki_info is not None:
         lines.append('Wikipedia information found:\n')
@@ -41,11 +46,30 @@ def start():
     lines.append('\n\n\n\n')
     lines.append('Bibliographical info:\n\n')
     if rsl_data is not None:
+        lines.append('RSL Data:\n')
         lines.append('\n'.join(map(str, rsl_data)))
-        lines.append('\n\n\n\n')
+        lines.append('\n\n')
     if geokniga_data is not None:
+        lines.append('Geokniga Data:\n')
         lines.append('\n'.join(map(str, geokniga_data)))
+        lines.append('\n\n')
 
+    if rgo_data is not None:
+        lines.append('RGO Data:\n')
+        lines.append('\n'.join(rgo_data))
+        lines.append('\n\n')
+    if nnr_data is not None:
+        lines.append('NNR Data:\n')
+        lines.append('\n'.join([i[0] for i in nnr_data[1]['Публикации ']]))
+        lines.append('\n\n')
+    if spb_data is not None:
+        lines.append('SPB Data:\n')
+        lines.append('\n'.join(spb_data[1]))
+        lines.append('\n\n')
+    if rnb_data is not None:
+        lines.append('RNB Card Images:\n')
+        lines.append('\n'.join([f'{key}:   {value}' for key, value in rnb_data.items()]))
+        lines.append('\n\n')
     file_save(lines)
 
 
