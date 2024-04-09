@@ -10,7 +10,7 @@ async def rgo_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
     logger.log('Checking if a person exists in rgo...')
     URL = f"https://elib.rgo.ru/simple-search?location=%2F&query={name}&rpp=10&sort_by=score&order=desc"
-    htm = await requests.get(URL).text
+    htm = requests.get(URL).text
     soup = BeautifulSoup(htm, "html.parser")
     notfoud = soup.find("main", class_="main ml-md-5 mr-md-5 mr-xl-0 ml-xl-0").find("p")
     params = {
