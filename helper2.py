@@ -2,23 +2,18 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from helper1 import Logger, handler
+import asyncio
 
 
 
-
-def rgo_check(name, verbosity=True):
+async def rgo_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
     logger.log('Checking if a person exists in rgo...')
     URL = f"https://elib.rgo.ru/simple-search?location=%2F&query={name}&rpp=10&sort_by=score&order=desc"
-    htm = requests.get(URL).text
+    htm = await requests.get(URL).text
     soup = BeautifulSoup(htm, "html.parser")
-    page_p = soup.find("main", class_="main ml-md-5 mr-md-5 mr-xl-0 ml-xl-0").find("p")
-
-    if page_p is None:
-        res = {}
-        limit = str(soup.find("div", class_="pagination").find("span", class_="c-mid-blue").string).split(" ")[-1]
-
-        params = {
+    notfoud = soup.find("main", class_="main ml-md-5 mr-md-5 mr-xl-0 ml-xl-0").find("p")
+    params = {
             'query': name,
             'rpp': '10',
             'sort_by': 'score',
@@ -26,6 +21,24 @@ def rgo_check(name, verbosity=True):
             'etal': '0',
             'start': '0'
         }
+    limit = str(soup.find("div", class_="pagination").find("span", class_="c-mid-blue").string).split(" ")[-1]
+
+    async def fetch_crds(params, j, res):
+        params['start'] = str(j)
+        urlsec = requests.get("https://elib.rgo.ru/simple-search", params=params).text
+        sou = BeautifulSoup(urlsec, "html.parser")
+        textres = sou.find("div", class_="discovery-result-results").find_all("b")
+        urlres = sou.find("div", class_="discovery-result-results").find_all(class_="button button-primary mt-2")
+        cnt = 0
+        for i in textres:
+            textres[cnt] = i.string.replace("\n                                ", "")
+            urlres[cnt] = f"https://elib.rgo.ru/{str(urlres[cnt])[45:68]}"
+            res[textres[cnt]] = str(urlres[cnt])
+            cnt += 1
+        return res
+
+    def non_parallel_rgo_check(logger, params, limit):
+        res = {}
         logger.log('Obtaining a description from the cards')
 
         for j in range(0, int(limit), 10):
@@ -42,9 +55,21 @@ def rgo_check(name, verbosity=True):
                 cnt += 1
         logger.log("Done!")
         return res
+    
+    if notfoud is None:
+        if not parallel:
+            return non_parallel_rgo_check(logger, params)
+        
+        res = {}
+        logger.log('Obtaining a description from the cards')
+
+        task1 = [fetch_crds(params, j, res) for j in range(0, int(limit), 10)]
+        await asyncio.gather(*task1)
+        logger.log("Done!")
+        return res
     else:
         logger.log("Not found, exiting")
-        return page_p.string
+        return notfoud.string
     
 
 @handler
@@ -161,4 +186,4 @@ def spb_check(name, verbosity=True):
 
 if __name__ == "__main__":
     # print('\n'.join([f'{key}:   {value}' for key, value in rnb_check('Обручев Владимир Афанасьевич').items()]))
-    print(rgo_check("Обручев", verbosity=True))
+    print(rgo_check("Обручев", parallel=False))
