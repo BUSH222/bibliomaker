@@ -4,8 +4,6 @@ import re
 from helper1 import Logger, handler
 
 
-
-
 def rgo_check(name, verbosity=True):
     logger = Logger(verbosity=verbosity)
     logger.log('Checking if a person exists in rgo...')
@@ -45,7 +43,7 @@ def rgo_check(name, verbosity=True):
     else:
         logger.log("Not found, exiting")
         return page_p.string
-    
+
 
 @handler
 def rnb_check(name, verbosity=True):
@@ -75,6 +73,7 @@ def rnb_check(name, verbosity=True):
                 out[heading[:-1]] = f'https://nlr.ru{pict}'
     logger.log('Done!')
     return out
+
 
 @handler
 def nnr_check(name, verbosity=True):
@@ -127,6 +126,7 @@ def nnr_check(name, verbosity=True):
             [i.string for i in biores2[-1].find_all("li")]
         logger.log('Done!')
         return res, crdres
+
 
 @handler
 def spb_check(name, verbosity=True):
