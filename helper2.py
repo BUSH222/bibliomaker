@@ -77,7 +77,7 @@ async def rgo_check(name, verbosity=True, parallel=True):
         return notfoud.string
     
 
-
+@async_handler
 async def rnb_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
     logger.log('Checking if a person exists in rnb...')
@@ -209,7 +209,7 @@ async def nnr_check(name, verbosity=True):
         return res, crdres
 
 @async_handler
-async def spb_check(name, verbosity=True):
+async def spb_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
     logger.log('Checking if a person exists in spb...')
     URL = 'https://primo.nlr.ru/primo_library/libweb/action/search.do'
@@ -217,24 +217,51 @@ async def spb_check(name, verbosity=True):
         'fn': 'search',
         'vl(freeText0)': name
     }
-    htm = requests.get(URL, params=params).text
-    soup = BeautifulSoup(htm, "html.parser")
-    crd = soup.find_all("h2", class_="EXLResultTitle")
+    hitfirst = requests.get(URL, params=params).text
+    soup = BeautifulSoup(hitfirst, "html.parser")
+   
+    limit = int(soup.find("div", id="resultsNumbersTile").find("em").string)
+    pagcnt = ((limit + 19) // 20)
     headres = []
     bodyres = []
     logger.log('Obtaining a description from the cards')
-    for i in crd:
-        surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
-        sou = BeautifulSoup(surl, "html.parser")
-        descrip = sou.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
-            find("span", class_="EXLDetailsDisplayVal")
-        while descrip.string is None:
+    for page in range(1, pagcnt + 1):
+        if page == 1:
+            hit = requests.get(URL, params=params).text
+        else:
+            pageind = 1 + (page - 2) * 20 # формула успеха
+            pageparams = {
+                'ct': 'Next Page',
+                'pag': 'nxt',
+                'indx': pageind,
+                'pageNumberComingFrom': '1',
+                'indx': pageind,
+                'fn': 'search',
+                'dscnt': '0',
+                'scp.scps': 'scope:(MAIN_07NLR)',
+                'vid': '07NLR_VU1',
+                'mode': 'Basic',
+                'ct': 'search',
+                'srt': 'rank',
+                'tab': 'default_tab',
+                'dum': 'true',
+                'vl(freeText0)': name
+                }
+            hit = requests.get(URL, params=pageparams).text
+        souppage = BeautifulSoup(hit, "html.parser")
+        crd = souppage.find_all("h2", class_="EXLResultTitle")
+        for i in crd:
             surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
             sou = BeautifulSoup(surl, "html.parser")
             descrip = sou.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
                 find("span", class_="EXLDetailsDisplayVal")
-        headres.append(sou.find("h1", class_="EXLResultTitle").string)
-        bodyres.append(descrip.string)
+            while descrip.string is None:
+                surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
+                sou = BeautifulSoup(surl, "html.parser")
+                descrip = sou.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
+                    find("span", class_="EXLDetailsDisplayVal")
+            headres.append(sou.find("h1", class_="EXLResultTitle").string)
+            bodyres.append(descrip.string)
     logger.log('Done!')
     return headres, bodyres
 
@@ -242,5 +269,5 @@ async def spb_check(name, verbosity=True):
 if __name__ == "__main__":
     # print('\n'.join([f'{key}:   {value}' for key, value in rnb_check('Обручев Владимир Афанасьевич').items()]))
     # print(rgo_check("Обручев", parallel=False))
-    res = asyncio.run(rnb_check('Обручев Владимир', parallel=True))
+    res = asyncio.run(spb_check('Русаков, М.П', parallel=True))
     print(res)
