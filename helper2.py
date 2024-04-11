@@ -87,6 +87,20 @@ async def rnb_check(name, verbosity=True, parallel=True):
     allcards = soup.find("div", id="row1textmain").find("div", class_="text").find_all("a", href_="")
     logger.log('Obtaining a description from the cards')
 
+
+    async def fetch_pict(j, session, URLCRDS):
+        URLCRD = URLCRDS[:-1] + str(j)
+        async with session.get(URLCRD) as respcrd:
+            resf = []
+            hitcrd = await respcrd.text()
+            soupcrd = BeautifulSoup(hitcrd, "html.parser")
+            heading = soupcrd.find("div", class_="center").find("b").string
+            pict = soupcrd.find("img", class_="card")["src"]
+            stroka = f'https://nlr.ru{pict}'
+            resf.append(heading[:-1])
+            resf.append(stroka)
+        return resf
+
     async def fetch_info(i1, session):
         if name in str(i1.string):
             URLCRDS = "https://nlr.ru/e-case3/sc2.php/web_gak{}".format(str(i1["href"])[2:])
@@ -96,17 +110,20 @@ async def rnb_check(name, verbosity=True, parallel=True):
                 resf = []
                 heading = soupcrds.find("div", class_="center").find("b").string
                 limit = int(heading.split(" ")[-1][:-1])
-                for j in range(1, limit + 1):
-                    URLCRD = URLCRDS[:-1] + str(j)
-                    async with session.get(URLCRD) as respcrd:
-                        hitcrd = await respcrd.text()
-                        soupcrd = BeautifulSoup(hitcrd, "html.parser")
-                        heading = soupcrd.find("div", class_="center").find("b").string
-                        pict = soupcrd.find("img", class_="card")["src"]
-                        stroka = f'https://nlr.ru{pict}'
-                        resf.append(heading[:-1])
-                        resf.append(stroka)
+                taskf = [fetch_pict(j, session, URLCRDS) for j in range(1, limit + 1)]
+                resf= await asyncio.gather(*taskf)
                 return resf
+
+                # for j in range(1, limit + 1):
+                #     URLCRD = URLCRDS[:-1] + str(j)
+                #     async with session.get(URLCRD) as respcrd:
+                #         hitcrd = await respcrd.text()
+                #         soupcrd = BeautifulSoup(hitcrd, "html.parser")
+                #         heading = soupcrd.find("div", class_="center").find("b").string
+                #         pict = soupcrd.find("img", class_="card")["src"]
+                #         stroka = f'https://nlr.ru{pict}'
+                #         resf.append(heading[:-1])
+                #         resf.append(stroka)
             
     def non_parallel_rnb_check():
         out = {}
