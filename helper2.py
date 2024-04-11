@@ -1,11 +1,12 @@
 import requests
 from bs4 import BeautifulSoup
 import re
-from helper1 import Logger, handler
+from helper1 import Logger, async_handler
 import asyncio
+import aiohttp
 
 
-
+@async_handler
 async def rgo_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
     logger.log('Checking if a person exists in rgo...')
@@ -23,20 +24,24 @@ async def rgo_check(name, verbosity=True, parallel=True):
         }
     limit = str(soup.find("div", class_="pagination").find("span", class_="c-mid-blue").string).split(" ")[-1]
 
-    async def fetch_crds(params, j, res):
-        params['start'] = str(j)
-        urlsec = requests.get("https://elib.rgo.ru/simple-search", params=params).text
-        sou = BeautifulSoup(urlsec, "html.parser")
-        textres = sou.find("div", class_="discovery-result-results").find_all("b")
-        urlres = sou.find("div", class_="discovery-result-results").find_all(class_="button button-primary mt-2")
-        cnt = 0
-        for i in textres:
-            textres[cnt] = i.string.replace("\n                                ", "")
-            urlres[cnt] = f"https://elib.rgo.ru/{str(urlres[cnt])[45:68]}"
-            res[textres[cnt]] = str(urlres[cnt])
-            cnt += 1
-        return res
-
+    async def fetch_crds(paramsf, j, session):
+        # urlsec = requests.get("https://elib.rgo.ru/simple-search", params=params).text
+        paramsf['start'] = str(j)
+        async with session.get(URL, params=paramsf, timeout=10) as response:
+            resf = []
+            hit = await response.text()
+            sou = BeautifulSoup(hit, "html.parser")
+            textres = sou.find("div", class_="discovery-result-results").find_all("b")
+            urlres = sou.find("div", class_="discovery-result-results").find_all(class_="button button-primary mt-2")
+            cnt = 0
+            for i in textres:
+                textres[cnt] = i.string.replace("\n                                ", "")
+                urlres[cnt] = f"https://elib.rgo.ru/{str(urlres[cnt])[45:68]}"
+                resf.append(textres[cnt])
+                resf.append(str(urlres[cnt]))
+                cnt += 1
+            return resf
+        
     def non_parallel_rgo_check(logger, params, limit):
         res = {}
         logger.log('Obtaining a description from the cards')
@@ -58,22 +63,22 @@ async def rgo_check(name, verbosity=True, parallel=True):
     
     if notfoud is None:
         if not parallel:
-            return non_parallel_rgo_check(logger, params)
-        
-        res = {}
+            return non_parallel_rgo_check(logger, params, limit)
+        entries = []
         logger.log('Obtaining a description from the cards')
-
-        task1 = [fetch_crds(params, j, res) for j in range(0, int(limit), 10)]
-        await asyncio.gather(*task1)
         logger.log("Done!")
-        return res
+        async with aiohttp.ClientSession() as session1:
+            task1 = [fetch_crds(params, j, session1) for j in range(0, int(limit) - 1, 10) ]
+            results1 = await asyncio.gather(*task1)
+            entries.extend(results1)
+        return entries
     else:
         logger.log("Not found, exiting")
         return notfoud.string
     
 
-@handler
-def rnb_check(name, verbosity=True):
+@async_handler
+async def rnb_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
     logger.log('Checking if a person exists in rnb...')
     URL = f"https://nlr.ru/e-case3/sc2.php/web_gak/ss?text={name}&x=15&y=17"
@@ -101,10 +106,11 @@ def rnb_check(name, verbosity=True):
     logger.log('Done!')
     return out
 
-@handler
-def nnr_check(name, verbosity=True):
+
+@async_handler
+async def nnr_check(name, verbosity=True):
     logger = Logger(verbosity=verbosity)
-    logger.log('Checking if a person exists in nnr...')
+    logger.log('Checking if a person exists in nnr. ..')
     URL = "http://e-heritage.ru/Catalog/FindPerson"
     data = {
         'maxRow': '1',
@@ -153,8 +159,8 @@ def nnr_check(name, verbosity=True):
         logger.log('Done!')
         return res, crdres
 
-@handler
-def spb_check(name, verbosity=True):
+@async_handler
+async def spb_check(name, verbosity=True):
     logger = Logger(verbosity=verbosity)
     logger.log('Checking if a person exists in spb...')
     URL = 'https://primo.nlr.ru/primo_library/libweb/action/search.do'
@@ -186,4 +192,6 @@ def spb_check(name, verbosity=True):
 
 if __name__ == "__main__":
     # print('\n'.join([f'{key}:   {value}' for key, value in rnb_check('Обручев Владимир Афанасьевич').items()]))
-    print(rgo_check("Обручев", parallel=False))
+    # print(rgo_check("Обручев", parallel=False))
+    res = asyncio.run(rnb_check('Обручев Владимир', parallel=False))
+    print(res)
