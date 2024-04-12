@@ -208,7 +208,7 @@ async def nnr_check(name, verbosity=True):
         logger.log('Done!')
         return res, crdres
 
-
+@async_handler
 async def spb_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
     logger.log('Checking if a person exists in spb...')
@@ -270,7 +270,6 @@ async def spb_check(name, verbosity=True, parallel=True):
                 hitpage = await respage.text()
                 souppage = BeautifulSoup(hitpage, "html.parser")
                 crd = souppage.find_all("h2", class_="EXLResultTitle")
-                print(crd)
                 taskf = [fetch_crd(i, session) for i in crd]
                 resultf = await asyncio.gather(*taskf)
         else:
