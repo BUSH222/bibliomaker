@@ -208,7 +208,7 @@ async def nnr_check(name, verbosity=True):
         logger.log('Done!')
         return res, crdres
 
-@async_handler
+
 async def spb_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
     logger.log('Checking if a person exists in spb...')
@@ -219,15 +219,60 @@ async def spb_check(name, verbosity=True, parallel=True):
     }
     hitfirst = requests.get(URL, params=params).text
     soup = BeautifulSoup(hitfirst, "html.parser")
-   
+
     limit = int(soup.find("div", id="resultsNumbersTile").find("em").string)
     pagcnt = ((limit + 19) // 20)
     headres = []
     bodyres = []
     logger.log('Obtaining a description from the cards')
-    for page in range(1, pagcnt + 1):
+
+    def non_parallel_spb_check(logger):
+        for page in range(1, pagcnt + 1):
+            if page == 1:
+                hit = requests.get(URL, params=params).text
+            else:
+                pageind = 1 + (page - 2) * 20 # формула успеха
+                pageparams = {
+                    'ct': 'Next Page',
+                    'pag': 'nxt',
+                    'indx': pageind,
+                    'pageNumberComingFrom': '1',
+                    'indx': pageind,
+                    'fn': 'search',
+                    'dscnt': '0',
+                    'scp.scps': 'scope:(MAIN_07NLR)',
+                    'vid': '07NLR_VU1',
+                    'mode': 'Basic',
+                    'ct': 'search',
+                    'srt': 'rank',
+                    'tab': 'default_tab',
+                    'dum': 'true',
+                    'vl(freeText0)': name
+                    }
+                hit = requests.get(URL, params=pageparams).text
+            souppage = BeautifulSoup(hit, "html.parser")
+            crd = souppage.find_all("h2", class_="EXLResultTitle")
+            for i in crd:
+                surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
+                sou = BeautifulSoup(surl, "html.parser")
+                descrip = sou.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
+                    find("span", class_="EXLDetailsDisplayVal")
+                while descrip.string is None:
+                    surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
+                    sou = BeautifulSoup(surl, "html.parser")
+                    descrip = sou.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
+                        find("span", class_="EXLDetailsDisplayVal")
+                bodyres.append(descrip.string)
+        return bodyres
+    async def fetch_page(page, session):
         if page == 1:
-            hit = requests.get(URL, params=params).text
+            async with session.get(URL, params=params) as respage:
+                hitpage = await respage.text()
+                souppage = BeautifulSoup(hitpage, "html.parser")
+                crd = souppage.find_all("h2", class_="EXLResultTitle")
+                print(crd)
+                taskf = [fetch_crd(i, session) for i in crd]
+                resultf = await asyncio.gather(*taskf)
         else:
             pageind = 1 + (page - 2) * 20 # формула успеха
             pageparams = {
@@ -247,23 +292,50 @@ async def spb_check(name, verbosity=True, parallel=True):
                 'dum': 'true',
                 'vl(freeText0)': name
                 }
-            hit = requests.get(URL, params=pageparams).text
-        souppage = BeautifulSoup(hit, "html.parser")
-        crd = souppage.find_all("h2", class_="EXLResultTitle")
-        for i in crd:
-            surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
-            sou = BeautifulSoup(surl, "html.parser")
-            descrip = sou.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
+            async with session.get(URL, params=pageparams) as respage:
+                hitpage = await respage.text()
+                souppage = BeautifulSoup(hitpage, "html.parser")
+                crd = souppage.find_all("h2", class_="EXLResultTitle")
+                # for i in crd: 
+                #     # surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
+                #     async with session.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])) as respcrd:
+                #         hitcrd = await respcrd.text()
+                #         soucrd = BeautifulSoup(hitcrd, "html.parser")
+                #         descrip = soucrd.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
+                #             find("span", class_="EXLDetailsDisplayVal")
+                #         while descrip.string is None:
+                #             hitcrd = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
+                #             # async with session.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])) as respcrd:
+                #         #     hitcrd = await respcrd.text()
+                #             soucrd = BeautifulSoup(hitcrd, "html.parser")
+                #             descrip = soucrd.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
+                #                 find("span", class_="EXLDetailsDisplayVal")
+                taskf = [fetch_crd(i, session) for i in crd]
+                resultf = await asyncio.gather(*taskf)
+        return resultf
+    async def fetch_crd(i, session):
+        # surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
+        async with session.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])) as respcrd:
+            hitcrd = await respcrd.text()
+            soucrd = BeautifulSoup(hitcrd, "html.parser")
+            descrip = soucrd.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
                 find("span", class_="EXLDetailsDisplayVal")
             while descrip.string is None:
-                surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
-                sou = BeautifulSoup(surl, "html.parser")
-                descrip = sou.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
+                hitcrd = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
+                # async with session.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])) as respcrd:
+            #     hitcrd = await respcrd.text()
+                soucrd = BeautifulSoup(hitcrd, "html.parser")
+                descrip = soucrd.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
                     find("span", class_="EXLDetailsDisplayVal")
-            headres.append(sou.find("h1", class_="EXLResultTitle").string)
-            bodyres.append(descrip.string)
-    logger.log('Done!')
-    return headres, bodyres
+        return descrip.string
+    if not parallel:
+        return non_parallel_spb_check(logger)
+    async with aiohttp.ClientSession() as session1:
+        task1 = [fetch_page(page, session1) for page in range(1, pagcnt + 1)]
+        results1 = await asyncio.gather(*task1)
+        logger.log('Done!')
+    return results1    
+
 
 
 if __name__ == "__main__":
