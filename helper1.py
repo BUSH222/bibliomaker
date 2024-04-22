@@ -34,11 +34,11 @@ class BibEntry:
 
     def __repr__(self):
         """Print the contents of the entry, testing function"""
-        return f'{self.authors} {self.title} // {self.source} {self.physical_desc} ! Том: {self.tome}'
+        return f'{self.authors} {self.title} // {self.source} {self.physical_desc} ! {self.tome}'
 
     def __str__(self):
         """Return the contents of the entry."""
-        return f'{self.authors} {self.title} // {self.source} {self.physical_desc} ! Том: {self.tome}'
+        return f'{self.authors} {self.title} // {self.source} {self.physical_desc} ! {self.tome}'
 
 
 class Logger:
@@ -315,6 +315,10 @@ async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibE
 
     logger.log(f'Found, number of pages: {maxpage}, number of hits {totalhits}; Fetching pages')
 
+    if totalhits > 75:
+        logger.log('Too large for parallel search, starting the non-parallel search')
+        return non_parallel_rslsearch(logger, URL, URL2, PATTERN, reqdata)
+
     async with aiohttp.ClientSession() as session1:
         tasks1 = [fetch_pages(session1, URL, reqdata, i) for i in range(1, maxpage)]
         results1 = await asyncio.gather(*tasks1)
@@ -413,13 +417,13 @@ def higeosearch(person, verbosity=False) -> bool:
 
 if __name__ == '__main__':
     persontest1 = 'Русаков Михаил Петрович'
-    # persontest2 = 'Обручев Владимир Афанасьевич'
+    persontest2 = 'Обручев Владимир Афанасьевич'
     # persontest3 = 'Сумгин Михаил Иванович'
     # persontest4 = 'Вознесенский Владимир Александрович'
     # persontest5 = "Gibberish Gargle Васильевич"
     # res = wikisearch(persontest1, verbosity=True)
-    # res = asyncio.run(rslsearch(persontest1, verbosity=True, parallel=True))
+    res = asyncio.run(rslsearch(persontest2, verbosity=True, parallel=True))
     # res = rslsearch(persontest1, verbosity=True, parallel=True)
-    res = geoknigasearch(persontest1, verbosity=True)
+    # res = geoknigasearch(persontest1, verbosity=True)
     # res = higeosearch(persontest1, verbosity=True)
     print(res)
