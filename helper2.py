@@ -312,7 +312,7 @@ async def spb_check(name, verbosity=True, parallel=True):
             soucrd = BeautifulSoup(hitcrd, "html.parser")
             des = soucrd.find("div", class_="EXLDetailsContent")
             if des is None:
-                des = fetch_crd(i, session)
+                des = await fetch_crd(i, session)
                 return des
             else:
                 return des.find("li", id="Описание-1").find("span", class_="EXLDetailsDisplayVal").text.strip()
