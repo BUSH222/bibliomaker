@@ -303,22 +303,19 @@ async def spb_check(name, verbosity=True, parallel=True):
             #                 find("span", class_="EXLDetailsDisplayVal")
             taskf = [fetch_crd(i, session) for i in crd]
             resultf = await asyncio.gather(*taskf)
-        return resultf
+            return resultf
 
     async def fetch_crd(i, session):
         # surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
         async with session.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])) as respcrd:
             hitcrd = await respcrd.text()
             soucrd = BeautifulSoup(hitcrd, "html.parser")
-            descrip = soucrd.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").find("span", class_="EXLDetailsDisplayVal")
-            while descrip.string is None:
-                hitcrd = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
-                # async with session.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])) as respcrd:
-                # hitcrd = await respcrd.text()
-                soucrd = BeautifulSoup(hitcrd, "html.parser")
-                descrip = soucrd.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
-                    find("span", class_="EXLDetailsDisplayVal")
-        return descrip.string
+            des = soucrd.find("div", class_="EXLDetailsContent")
+            if des is None:
+                des = fetch_crd(i, session)
+                return des
+            else:
+                return des.find("li", id="Описание-1").find("span", class_="EXLDetailsDisplayVal").text.strip()
 
     if not parallel:
         return non_parallel_spb_check(logger)
@@ -326,7 +323,7 @@ async def spb_check(name, verbosity=True, parallel=True):
         task1 = [fetch_page(page, session1) for page in range(1, pagcnt + 1)]
         results1 = await asyncio.gather(*task1)
         logger.log('Done!')
-    return results1
+        return results1
 
 
 if __name__ == "__main__":
