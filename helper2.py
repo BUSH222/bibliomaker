@@ -14,14 +14,12 @@ async def rgo_check(name, verbosity=True, parallel=True):
     htm = requests.get(URL).text
     soup = BeautifulSoup(htm, "html.parser")
     notfoud = soup.find("main", class_="main ml-md-5 mr-md-5 mr-xl-0 ml-xl-0").find("p")
-    params = {
-            'query': name,
-            'rpp': '10',
-            'sort_by': 'score',
-            'order': 'desc',
-            'etal': '0',
-            'start': '0'
-        }
+    params = {'query': name,
+              'rpp': '10',
+              'sort_by': 'score',
+              'order': 'desc',
+              'etal': '0',
+              'start': '0'}
     limit = str(soup.find("div", class_="pagination").find("span", class_="c-mid-blue").string).split(" ")[-1]
 
     async def fetch_crds(paramsf, j, session):
@@ -41,7 +39,7 @@ async def rgo_check(name, verbosity=True, parallel=True):
                 resf.append(str(urlres[cnt]))
                 cnt += 1
             return resf
-        
+
     def non_parallel_rgo_check(logger, params, limit):
         res = {}
         logger.log('Obtaining a description from the cards')
@@ -60,7 +58,7 @@ async def rgo_check(name, verbosity=True, parallel=True):
                 cnt += 1
         logger.log("Done!")
         return res
-    
+
     if notfoud is None:
         if not parallel:
             return non_parallel_rgo_check(logger, params, limit)
@@ -68,14 +66,14 @@ async def rgo_check(name, verbosity=True, parallel=True):
         logger.log('Obtaining a description from the cards')
         logger.log("Done!")
         async with aiohttp.ClientSession() as session1:
-            task1 = [fetch_crds(params, j, session1) for j in range(0, int(limit) - 1, 10) ]
+            task1 = [fetch_crds(params, j, session1) for j in range(0, int(limit) - 1, 10)]
             results1 = await asyncio.gather(*task1)
             entries.extend(results1)
         return entries
     else:
         logger.log("Not found, exiting")
         return notfoud.string
-    
+
 
 @async_handler
 async def rnb_check(name, verbosity=True, parallel=True):
@@ -86,7 +84,6 @@ async def rnb_check(name, verbosity=True, parallel=True):
     soup = BeautifulSoup(htm, "html.parser")
     allcards = soup.find("div", id="row1textmain").find("div", class_="text").find_all("a", href_="")
     logger.log('Obtaining a description from the cards')
-
 
     async def fetch_pict(j, session, URLCRDS):
         URLCRD = URLCRDS[:-1] + str(j)
@@ -111,7 +108,7 @@ async def rnb_check(name, verbosity=True, parallel=True):
                 heading = soupcrds.find("div", class_="center").find("b").string
                 limit = int(heading.split(" ")[-1][:-1])
                 taskf = [fetch_pict(j, session, URLCRDS) for j in range(1, limit + 1)]
-                resf= await asyncio.gather(*taskf)
+                resf = await asyncio.gather(*taskf)
                 return resf
 
                 # for j in range(1, limit + 1):
@@ -124,7 +121,7 @@ async def rnb_check(name, verbosity=True, parallel=True):
                 #         stroka = f'https://nlr.ru{pict}'
                 #         resf.append(heading[:-1])
                 #         resf.append(stroka)
-            
+
     def non_parallel_rnb_check():
         out = {}
         for i in allcards:
@@ -151,9 +148,6 @@ async def rnb_check(name, verbosity=True, parallel=True):
             task1 = [fetch_info(i, session1) for i in allcards]
             results1 = await asyncio.gather(*task1)
         return results1
-
-
-
 
 
 @async_handler
@@ -230,24 +224,22 @@ async def spb_check(name, verbosity=True, parallel=True):
             if page == 1:
                 hit = requests.get(URL, params=params).text
             else:
-                pageind = 1 + (page - 2) * 20 # формула успеха
-                pageparams = {
-                    'ct': 'Next Page',
-                    'pag': 'nxt',
-                    'indx': pageind,
-                    'pageNumberComingFrom': '1',
-                    'indx': pageind,
-                    'fn': 'search',
-                    'dscnt': '0',
-                    'scp.scps': 'scope:(MAIN_07NLR)',
-                    'vid': '07NLR_VU1',
-                    'mode': 'Basic',
-                    'ct': 'search',
-                    'srt': 'rank',
-                    'tab': 'default_tab',
-                    'dum': 'true',
-                    'vl(freeText0)': name
-                    }
+                pageind = 1 + (page - 2) * 20  # формула успеха
+                pageparams = {'ct': 'Next Page',
+                              'pag': 'nxt',
+                              'indx': pageind,
+                              'pageNumberComingFrom': '1',
+                              'indx': pageind,
+                              'fn': 'search',
+                              'dscnt': '0',
+                              'scp.scps': 'scope:(MAIN_07NLR)',
+                              'vid': '07NLR_VU1',
+                              'mode': 'Basic',
+                              'ct': 'search',
+                              'srt': 'rank',
+                              'tab': 'default_tab',
+                              'dum': 'true',
+                              'vl(freeText0)': name}
                 hit = requests.get(URL, params=pageparams).text
             souppage = BeautifulSoup(hit, "html.parser")
             crd = souppage.find_all("h2", class_="EXLResultTitle")
@@ -263,6 +255,7 @@ async def spb_check(name, verbosity=True, parallel=True):
                         find("span", class_="EXLDetailsDisplayVal")
                 bodyres.append(descrip.string)
         return bodyres
+
     async def fetch_page(page, session):
         if page == 1:
             pageparams = params
@@ -273,7 +266,7 @@ async def spb_check(name, verbosity=True, parallel=True):
             #     taskf = [fetch_crd(i, session) for i in crd1]
             #     resultf = await asyncio.gather(*taskf)
         else:
-            pageind = 1 + (page - 2) * 20 # формула успеха
+            pageind = 1 + (page - 2) * 20  # формула успеха
             pageparams = {
                 'ct': 'Next Page',
                 'pag': 'nxt',
@@ -289,13 +282,12 @@ async def spb_check(name, verbosity=True, parallel=True):
                 'srt': 'rank',
                 'tab': 'default_tab',
                 'dum': 'true',
-                'vl(freeText0)': name
-                }
+                'vl(freeText0)': name}
         async with session.get(URL, params=pageparams) as respage:
             hitpage = await respage.text()
             souppage = BeautifulSoup(hitpage, "html.parser")
             crd = souppage.find_all("h2", class_="EXLResultTitle")
-            # for i in crd: 
+            # for i in crd:
             #     # surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
             #     async with session.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])) as respcrd:
             #         hitcrd = await respcrd.text()
@@ -312,6 +304,7 @@ async def spb_check(name, verbosity=True, parallel=True):
             taskf = [fetch_crd(i, session) for i in crd]
             resultf = await asyncio.gather(*taskf)
         return resultf
+
     async def fetch_crd(i, session):
         # surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
         async with session.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])) as respcrd:
@@ -321,24 +314,23 @@ async def spb_check(name, verbosity=True, parallel=True):
             while descrip.string is None:
                 hitcrd = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
                 # async with session.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])) as respcrd:
-            #     hitcrd = await respcrd.text()
+                # hitcrd = await respcrd.text()
                 soucrd = BeautifulSoup(hitcrd, "html.parser")
                 descrip = soucrd.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
                     find("span", class_="EXLDetailsDisplayVal")
-                
         return descrip.string
+
     if not parallel:
         return non_parallel_spb_check(logger)
     async with aiohttp.ClientSession() as session1:
         task1 = [fetch_page(page, session1) for page in range(1, pagcnt + 1)]
         results1 = await asyncio.gather(*task1)
         logger.log('Done!')
-    return results1    
-
+    return results1
 
 
 if __name__ == "__main__":
     # print('\n'.join([f'{key}:   {value}' for key, value in rnb_check('Обручев Владимир Афанасьевич').items()]))
     # print(rgo_check("Обручев", parallel=False))
-    res = asyncio.run(spb_check('Русаков, М.П', parallel=False))
+    res = asyncio.run(spb_check('Русаков, М.П', parallel=True))
     print(res)
