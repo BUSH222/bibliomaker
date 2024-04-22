@@ -111,17 +111,6 @@ async def rnb_check(name, verbosity=True, parallel=True):
                 resf = await asyncio.gather(*taskf)
                 return resf
 
-                # for j in range(1, limit + 1):
-                #     URLCRD = URLCRDS[:-1] + str(j)
-                #     async with session.get(URLCRD) as respcrd:
-                #         hitcrd = await respcrd.text()
-                #         soupcrd = BeautifulSoup(hitcrd, "html.parser")
-                #         heading = soupcrd.find("div", class_="center").find("b").string
-                #         pict = soupcrd.find("img", class_="card")["src"]
-                #         stroka = f'https://nlr.ru{pict}'
-                #         resf.append(heading[:-1])
-                #         resf.append(stroka)
-
     def non_parallel_rnb_check():
         out = {}
         for i in allcards:
@@ -203,6 +192,7 @@ async def nnr_check(name, verbosity=True):
         return res, crdres
 
 
+@async_handler
 async def spb_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
     logger.log('Checking if a person exists in spb...')
@@ -225,8 +215,7 @@ async def spb_check(name, verbosity=True, parallel=True):
                 hit = requests.get(URL, params=params).text
             else:
                 pageind = 1 + (page - 2) * 20  # формула успеха
-                pageparams = {'ct': 'Next Page',
-                              'pag': 'nxt',
+                pageparams = {'pag': 'nxt',
                               'indx': pageind,
                               'pageNumberComingFrom': '1',
                               'indx': pageind,
@@ -244,13 +233,14 @@ async def spb_check(name, verbosity=True, parallel=True):
             souppage = BeautifulSoup(hit, "html.parser")
             crd = souppage.find_all("h2", class_="EXLResultTitle")
             for i in crd:
-                surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
-                sou = BeautifulSoup(surl, "html.parser")
+                URL2 = i.find("a")["href"]
+                surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(URL2))
+                sou = BeautifulSoup(surl.text, "html.parser")
                 descrip = sou.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
                     find("span", class_="EXLDetailsDisplayVal")
                 while descrip.string is None:
-                    surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
-                    sou = BeautifulSoup(surl, "html.parser")
+                    surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(URL2))
+                    sou = BeautifulSoup(surl.text, "html.parser")
                     descrip = sou.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
                         find("span", class_="EXLDetailsDisplayVal")
                 bodyres.append(descrip.string)
@@ -259,16 +249,9 @@ async def spb_check(name, verbosity=True, parallel=True):
     async def fetch_page(page, session):
         if page == 1:
             pageparams = params
-            # async with session.get(URL, params=params) as respage:
-            #     hitpage = await respage.text()
-            #     souppage = BeautifulSoup(hitpage, "html.parser")
-            #     crd1 = souppage.find_all("h2", class_="EXLResultTitle")
-            #     taskf = [fetch_crd(i, session) for i in crd1]
-            #     resultf = await asyncio.gather(*taskf)
         else:
             pageind = 1 + (page - 2) * 20  # формула успеха
             pageparams = {
-                'ct': 'Next Page',
                 'pag': 'nxt',
                 'indx': pageind,
                 'pageNumberComingFrom': '1',
@@ -287,32 +270,17 @@ async def spb_check(name, verbosity=True, parallel=True):
             hitpage = await respage.text()
             souppage = BeautifulSoup(hitpage, "html.parser")
             crd = souppage.find_all("h2", class_="EXLResultTitle")
-            # for i in crd:
-            #     # surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
-            #     async with session.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])) as respcrd:
-            #         hitcrd = await respcrd.text()
-            #         soucrd = BeautifulSoup(hitcrd, "html.parser")
-            #         descrip = soucrd.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
-            #             find("span", class_="EXLDetailsDisplayVal")
-            #         while descrip.string is None:
-            #             hitcrd = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
-            #             # async with session.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])) as respcrd:
-            #         #     hitcrd = await respcrd.text()
-            #             soucrd = BeautifulSoup(hitcrd, "html.parser")
-            #             descrip = soucrd.find("div", class_="EXLDetailsContent").find("li", id="Описание-1").\
-            #                 find("span", class_="EXLDetailsDisplayVal")
-            taskf = [fetch_crd(i, session) for i in crd]
+            taskf = [fetch_crd(i.find("a")["href"], session) for i in crd]
             resultf = await asyncio.gather(*taskf)
             return resultf
 
-    async def fetch_crd(i, session):
-        # surl = requests.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])).text
-        async with session.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(i.find("a")["href"])) as respcrd:
+    async def fetch_crd(URL3, session):
+        async with session.get("https://primo.nlr.ru/primo_library/libweb/action/{}".format(URL3)) as respcrd:
             hitcrd = await respcrd.text()
             soucrd = BeautifulSoup(hitcrd, "html.parser")
             des = soucrd.find("div", class_="EXLDetailsContent")
             if des is None:
-                des = await fetch_crd(i, session)
+                des = await fetch_crd(URL3, session)
                 return des
             else:
                 return des.find("li", id="Описание-1").find("span", class_="EXLDetailsDisplayVal").text.strip()
