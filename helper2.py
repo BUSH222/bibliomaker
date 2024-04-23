@@ -76,7 +76,7 @@ async def rgo_check(name, verbosity=True, parallel=True):
         return [notfoud.string, ]
 
 
-@async_handler
+
 async def rnb_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
     logger.log('Checking if a person exists in rnb...')
@@ -133,11 +133,15 @@ async def rnb_check(name, verbosity=True, parallel=True):
     if not parallel:
         return non_parallel_rnb_check()
     else:
+        dictres = {}
         logger.log('Done!')
         async with aiohttp.ClientSession() as session1:
             task1 = [fetch_info(i, session1) for i in allcards]
             results1 = await asyncio.gather(*task1)
-        return results1
+            results1 = results1[1]
+        for k in results1:
+            dictres[k[0]] = k[1]
+        return dictres
 
 
 @async_handler
@@ -297,5 +301,5 @@ async def spb_check(name, verbosity=True, parallel=True):
 
 if __name__ == "__main__":
     # print('\n'.join([f'{key}:   {value}' for key, value in rnb_check('Обручев Владимир Афанасьевич').items()]))
-    print(asyncio.run(rnb_check("Михаил Русаков Петрович")))
+    print(asyncio.run(rnb_check("Русаков Михаил Петрович")))
     # res = asyncio.run(spb_check('Русаков, М.П', parallel=True))
