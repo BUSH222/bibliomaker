@@ -297,5 +297,5 @@ async def spb_check(name, verbosity=True, parallel=True):
 
 if __name__ == "__main__":
     # print('\n'.join([f'{key}:   {value}' for key, value in rnb_check('Обручев Владимир Афанасьевич').items()]))
-    print(asyncio.run(rgo_check("Михаил Русаков Петрович", parallel=False)))
+    print(asyncio.run(rnb_check("Михаил Русаков Петрович")))
     # res = asyncio.run(spb_check('Русаков, М.П', parallel=True))

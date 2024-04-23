@@ -64,7 +64,7 @@ def start():
         lines.append('\n\n')
     if spb_data is not None:
         lines.append('SPB Data:\n')
-        lines.append('\n'.join(spb_data))
+        lines.append('\n'.join(spb_data[0]))
         lines.append('\n\n')
     if rnb_data is not None:
         lines.append('RNB Card Images:\n')
