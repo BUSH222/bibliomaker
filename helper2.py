@@ -76,7 +76,7 @@ async def rgo_check(name, verbosity=True, parallel=True):
         return [notfoud.string, ]
 
 
-
+@async_handler
 async def rnb_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
     logger.log('Checking if a person exists in rnb...')
