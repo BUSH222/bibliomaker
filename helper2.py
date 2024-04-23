@@ -20,7 +20,6 @@ async def rgo_check(name, verbosity=True, parallel=True):
               'order': 'desc',
               'etal': '0',
               'start': '0'}
-    limit = str(soup.find("div", class_="pagination").find("span", class_="c-mid-blue").string).split(" ")[-1]
 
     async def fetch_crds(paramsf, j, session):
         # urlsec = requests.get("https://elib.rgo.ru/simple-search", params=params).text
@@ -60,6 +59,8 @@ async def rgo_check(name, verbosity=True, parallel=True):
         return res
 
     if notfoud is None:
+        limit = str(soup.find("div", class_="pagination").find("span", class_="c-mid-blue").string).split(" ")[-1]
+        limit = str(soup.find("div", class_="pagination").find("span", class_="c-mid-blue").string).split(" ")[-1]
         if not parallel:
             return non_parallel_rgo_check(logger, params, limit)
         entries = []
@@ -72,7 +73,7 @@ async def rgo_check(name, verbosity=True, parallel=True):
         return entries
     else:
         logger.log("Not found, exiting")
-        return notfoud.string
+        return [notfoud.string, ]
 
 
 @async_handler
@@ -132,11 +133,15 @@ async def rnb_check(name, verbosity=True, parallel=True):
     if not parallel:
         return non_parallel_rnb_check()
     else:
+        dictres = {}
         logger.log('Done!')
         async with aiohttp.ClientSession() as session1:
             task1 = [fetch_info(i, session1) for i in allcards]
             results1 = await asyncio.gather(*task1)
-        return results1
+            results1 = results1[1]
+        for k in results1:
+            dictres[k[0]] = k[1]
+        return dictres
 
 
 @async_handler
@@ -296,6 +301,5 @@ async def spb_check(name, verbosity=True, parallel=True):
 
 if __name__ == "__main__":
     # print('\n'.join([f'{key}:   {value}' for key, value in rnb_check('Обручев Владимир Афанасьевич').items()]))
-    # print(rgo_check("Обручев", parallel=False))
-    res = asyncio.run(spb_check('Русаков, М.П', parallel=True))
-    print(res)
+    print(asyncio.run(rnb_check("Русаков Михаил Петрович")))
+    # res = asyncio.run(spb_check('Русаков, М.П', parallel=True))

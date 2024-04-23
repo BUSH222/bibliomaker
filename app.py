@@ -30,10 +30,10 @@ def start():
     higeo_info = h.higeosearch(person=person, verbosity=True)
     rsl_data = asyncio.run(h.rslsearch(person=person, verbosity=True, parallel=True))
     geokniga_data = h.geoknigasearch(person=person, verbosity=True)
-    rgo_data = h2.rgo_check(name=person)
-    rnb_data = h2.rnb_check(name=person)  # pics
-    nnr_data = h2.nnr_check(name=person)
-    spb_data = h2.spb_check(name=person)
+    rgo_data = asyncio.run(h2.rgo_check(name=person))
+    rnb_data = asyncio.run(h2.rnb_check(name=person))  # pics
+    nnr_data = asyncio.run(h2.nnr_check(name=person))
+    spb_data = asyncio.run(h2.spb_check(name=person))
 
     lines = []
     if wiki_info is not None:
@@ -64,7 +64,7 @@ def start():
         lines.append('\n\n')
     if spb_data is not None:
         lines.append('SPB Data:\n')
-        lines.append('\n'.join(spb_data[1]))
+        lines.append('\n'.join(spb_data[0]))
         lines.append('\n\n')
     if rnb_data is not None:
         lines.append('RNB Card Images:\n')
