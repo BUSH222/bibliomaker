@@ -60,6 +60,7 @@ async def rgo_check(name, verbosity=True, parallel=True):
 
     if notfoud is None:
         limit = str(soup.find("div", class_="pagination").find("span", class_="c-mid-blue").string).split(" ")[-1]
+        limit = str(soup.find("div", class_="pagination").find("span", class_="c-mid-blue").string).split(" ")[-1]
         if not parallel:
             return non_parallel_rgo_check(logger, params, limit)
         entries = []
