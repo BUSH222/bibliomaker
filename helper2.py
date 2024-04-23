@@ -20,7 +20,6 @@ async def rgo_check(name, verbosity=True, parallel=True):
               'order': 'desc',
               'etal': '0',
               'start': '0'}
-    limit = str(soup.find("div", class_="pagination").find("span", class_="c-mid-blue").string).split(" ")[-1]
 
     async def fetch_crds(paramsf, j, session):
         # urlsec = requests.get("https://elib.rgo.ru/simple-search", params=params).text
@@ -60,6 +59,7 @@ async def rgo_check(name, verbosity=True, parallel=True):
         return res
 
     if notfoud is None:
+        limit = str(soup.find("div", class_="pagination").find("span", class_="c-mid-blue").string).split(" ")[-1]
         if not parallel:
             return non_parallel_rgo_check(logger, params, limit)
         entries = []
@@ -72,7 +72,7 @@ async def rgo_check(name, verbosity=True, parallel=True):
         return entries
     else:
         logger.log("Not found, exiting")
-        return notfoud.string
+        return [notfoud.string, ]
 
 
 @async_handler
@@ -296,6 +296,5 @@ async def spb_check(name, verbosity=True, parallel=True):
 
 if __name__ == "__main__":
     # print('\n'.join([f'{key}:   {value}' for key, value in rnb_check('Обручев Владимир Афанасьевич').items()]))
-    # print(rgo_check("Обручев", parallel=False))
-    res = asyncio.run(spb_check('Русаков, М.П', parallel=True))
-    print(res)
+    print(asyncio.run(rgo_check("Михаил Русаков Петрович", parallel=False)))
+    # res = asyncio.run(spb_check('Русаков, М.П', parallel=True))
