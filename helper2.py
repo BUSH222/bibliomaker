@@ -76,7 +76,7 @@ async def rgo_check(name, verbosity=True, parallel=True):
         return [notfoud.string, ]
 
 
-@async_handler
+
 async def rnb_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
     logger.log('Checking if a person exists in rnb...')
@@ -139,6 +139,9 @@ async def rnb_check(name, verbosity=True, parallel=True):
             task1 = [fetch_info(i, session1) for i in allcards]
             results1 = await asyncio.gather(*task1)
             results1 = results1[1]
+        if results1 is None:
+            dictres[""] = "Нет информации на сайте РНБ"
+            return dictres
         for k in results1:
             dictres[k[0]] = k[1]
         return dictres
@@ -301,5 +304,5 @@ async def spb_check(name, verbosity=True, parallel=True):
 
 if __name__ == "__main__":
     # print('\n'.join([f'{key}:   {value}' for key, value in rnb_check('Обручев Владимир Афанасьевич').items()]))
-    print(asyncio.run(rnb_check("Русаков Михаил Петрович")))
+    print(asyncio.run(rnb_check("Иван Второв Петрович")))
     # res = asyncio.run(spb_check('Русаков, М.П', parallel=True))
