@@ -84,7 +84,9 @@ def file_save(text):
     f = asksaveasfile(mode='w', defaultextension=".txt")
     if f is None:
         return
-    f.writelines(text)
+    
+    with open(f.name, 'w', encoding="utf-8") as realfile:
+        realfile.writelines(text)
     f.close()
 
 
