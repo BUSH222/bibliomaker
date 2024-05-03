@@ -302,10 +302,12 @@ async def spb_check(name, verbosity=True, parallel=True):
         task1 = [fetch_page(page, session1) for page in range(1, pagcnt + 1)]
         results1 = await asyncio.gather(*task1)
         logger.log('Done!')
+        if results1 == []:
+            return [["Нет информации на сайте СПБ"], ]
         return results1
 
 
 if __name__ == "__main__":
     # print('\n'.join([f'{key}:   {value}' for key, value in rnb_check('Обручев Владимир Афанасьевич').items()]))
-    print(asyncio.run(rgo_check("воаываыв")))
+    print(asyncio.run(spb_check("воаываыв")))
     # res = asyncio.run(spb_check('Русаков, М.П', parallel=True))
