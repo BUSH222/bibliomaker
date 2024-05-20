@@ -12,6 +12,9 @@ async def rgo_check(name, verbosity=True, parallel=True):
     logger.log('Checking if a person exists in rgo...')
     URL = f"https://elib.rgo.ru/simple-search?location=%2F&query={name}&rpp=10&sort_by=score&order=desc"
     htm = requests.get(URL).text
+    if requests.get(URL).status_code != 200:
+        return ["Рго не отвечает...", ]
+
     soup = BeautifulSoup(htm, "html.parser")
     notfoud = soup.find("main", class_="main ml-md-5 mr-md-5 mr-xl-0 ml-xl-0").find("p")
     params = {'query': name,
@@ -139,6 +142,9 @@ async def rnb_check(name, verbosity=True, parallel=True):
             task1 = [fetch_info(i, session1) for i in allcards]
             results1 = await asyncio.gather(*task1)
             results1 = results1[1]
+        if results1 is None:
+            dictres[""] = "Нет информации на сайте РНБ"
+            return dictres
         for k in results1:
             dictres[k[0]] = k[1]
         return dictres
@@ -296,10 +302,12 @@ async def spb_check(name, verbosity=True, parallel=True):
         task1 = [fetch_page(page, session1) for page in range(1, pagcnt + 1)]
         results1 = await asyncio.gather(*task1)
         logger.log('Done!')
+        if results1 == []:
+            return [["Нет информации на сайте СПБ"], ]
         return results1
 
 
 if __name__ == "__main__":
     # print('\n'.join([f'{key}:   {value}' for key, value in rnb_check('Обручев Владимир Афанасьевич').items()]))
-    print(asyncio.run(rnb_check("Русаков Михаил Петрович")))
+    print(asyncio.run(spb_check("воаываыв")))
     # res = asyncio.run(spb_check('Русаков, М.П', parallel=True))
