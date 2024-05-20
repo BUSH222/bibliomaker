@@ -20,6 +20,9 @@ class StdoutRedirector:
         self.text_widget.see("end")  # Scroll to the end
         self.text_widget.config(state='disabled')
 
+    def flush(self):
+        return None
+
 
 def start():
     name = entry_name.get()
@@ -94,20 +97,20 @@ root = tk.Tk()
 root.title("Bibliomaker")
 root.resizable(False, False)
 
-tk.Label(root, text="Name").grid(row=0, column=0)
-entry_name = tk.Entry(root)
-entry_name.grid(row=0, column=1)
-
-tk.Label(root, text="Surname").grid(row=1, column=0)
+tk.Label(root, text="Surname").grid(row=0, column=0)
 entry_surname = tk.Entry(root)
-entry_surname.grid(row=1, column=1)
+entry_surname.grid(row=0, column=1)
+
+tk.Label(root, text="Name").grid(row=1, column=0)
+entry_name = tk.Entry(root)
+entry_name.grid(row=1, column=1)
 
 tk.Label(root, text="Patronymic").grid(row=2, column=0)
 entry_patronymic = tk.Entry(root)
 entry_patronymic.grid(row=2, column=1)
 
 tk.Label(root, text="Keywords").grid(row=3, column=0)
-entry_fields_of_work = tk.Entry(root)
+entry_fields_of_work = tk.Entry(root, state='disabled')
 entry_fields_of_work.grid(row=3, column=1)
 
 t = threading.Thread(target=start, name="Start")
