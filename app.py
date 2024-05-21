@@ -4,8 +4,7 @@ from tkinter.filedialog import asksaveasfile
 import sys
 from time import localtime, strftime
 import asyncio
-import helper1 as h
-import helper2 as h2
+import helper as h
 import threading
 
 
@@ -33,10 +32,10 @@ def start():
     higeo_info = h.higeosearch(person=person, verbosity=True)
     rsl_data = asyncio.run(h.rslsearch(person=person, verbosity=True, parallel=True))
     geokniga_data = h.geoknigasearch(person=person, verbosity=True)
-    rgo_data = asyncio.run(h2.rgo_check(name=person))
-    rnb_data = asyncio.run(h2.rnb_check(name=person))  # pics
-    nnr_data = asyncio.run(h2.nnr_check(name=person))
-    spb_data = asyncio.run(h2.spb_check(name=person))
+    rgo_data = asyncio.run(h.rgo_check(name=person))
+    rnb_data = asyncio.run(h.rnb_check(name=person))  # pics
+    nnr_data = asyncio.run(h.nnr_check(name=person))
+    spb_data = asyncio.run(h.spb_check(name=person))
 
     lines = []
     if wiki_info is not None:
