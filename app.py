@@ -4,7 +4,7 @@ from tkinter.filedialog import asksaveasfile
 import sys
 from time import localtime, strftime
 import asyncio
-import helper as h
+import helper
 import threading
 
 
@@ -28,14 +28,14 @@ def start():
     surname = entry_surname.get()
     patronymic = entry_patronymic.get()
     person = ' '.join([surname, name, patronymic]).strip()
-    wiki_info = h.wikisearch(person=person, verbosity=True)
-    higeo_info = h.higeosearch(person=person, verbosity=True)
-    rsl_data = asyncio.run(h.rslsearch(person=person, verbosity=True, parallel=True))
-    geokniga_data = h.geoknigasearch(person=person, verbosity=True)
-    rgo_data = asyncio.run(h.rgo_check(name=person))
-    rnb_data = asyncio.run(h.rnb_check(name=person))  # pics
-    nnr_data = asyncio.run(h.nnr_check(name=person))
-    spb_data = asyncio.run(h.spb_check(name=person))
+    wiki_info = helper.wikisearch(person=person, verbosity=True)
+    higeo_info = helper.higeosearch(person=person, verbosity=True)
+    rsl_data = asyncio.run(helper.rslsearch(person=person, verbosity=True, parallel=True))
+    geokniga_data = helper.geoknigasearch(person=person, verbosity=True)
+    rgo_data = asyncio.run(helper.rgo_check(name=person))
+    rnb_data = asyncio.run(helper.rnb_check(name=person))  # pics
+    nnr_data = asyncio.run(helper.nnr_check(name=person))
+    spb_data = asyncio.run(helper.spb_check(name=person))
 
     lines = []
     if wiki_info is not None:
