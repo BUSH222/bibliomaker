@@ -1,6 +1,10 @@
 import requests
 from helper.handlers import handler
 from helper.logger import Logger
+from localisation import default
+
+
+L = default['scrapers']['wikisearch']
 
 
 @handler
@@ -40,7 +44,7 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
     pobdesc, poddesc = None, None
 
     # Check if person exists in wiki
-    logger.log('Checking if a person exists in wiki...')
+    logger.log(L['start'])
     R1 = requests.get(url=URL, params=PARAMS1)
     data = R1.json()
     searchinfo = data['query']['searchinfo']
@@ -48,20 +52,20 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
 
     if searchinfo['totalhits'] == 0:
         if verbosity:
-            logger.log('Not found, exiting', color=Logger.FAIL)
+            logger.log(L['not_found'], color=Logger.FAIL)
         return None
 
     # if exists, get the page id
     if searchresults[0]['title'].replace(',', '') == person:
         exists = True
-        logger.log('Found')
+        logger.log(L['found'])
         pageid = searchresults[0]['pageid']
 
     if not exists:
         return None
 
     # Obtain the wikimedia unique id
-    logger.log('Obtaining the wikimedia unique id')
+    logger.log(L['wikimedia_id_start'])
 
     PARAMS2 = {
         'action': 'query',
@@ -76,7 +80,7 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
     try:
         wikibase_id = R2.json()['query']['pages'][0]['pageprops']['wikibase_item']
     except KeyError:
-        logger.fail('Error getting wikimedia id, no further information can be accessd.')
+        logger.fail(L['error_wikimedia'])
         return [None, None, None, None, None, None]
 
     # Obtain the necessary information from wikibase
@@ -93,26 +97,26 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
                'props': 'claims',
                'formatversion': '2'}
 
-    logger.log('Fetching dates and places.')
+    logger.log(L['dates_start'])
 
     R3 = requests.get(url=URL2, params=PARAMS3)
     try:
         data = R3.json()['entities'][wikibase_id]['claims']
     except KeyError:
         if verbosity:
-            logger.fail('No claims for wikimedia id found, no further info can be obtained')
+            logger.fail(L['error_no_claims'])
         return [None, None, None, None, None, None]
 
     try:
         dobraw = data['P569'][0]['mainsnak']['datavalue']['value']['time']  # Date of Birth
         pobid = data['P19'][0]['mainsnak']['datavalue']['value']['id']  # Place of Birth id
     except KeyError:
-        logger.fail('Error fetching date of birth or place of birth id')
+        logger.fail(L['error_dob_pob'])
     try:
         dodraw = data['P570'][0]['mainsnak']['datavalue']['value']['time']  # Date of Death
         podid = data['P20'][0]['mainsnak']['datavalue']['value']['id']  # Place of Death id
     except KeyError:
-        logger.fail('Error fetching date of death or place of death id')
+        logger.fail(L['error_dod_pod'])
 
     # Find places of birth from ids
     PARAMS3['props'] = 'labels|descriptions'
@@ -124,22 +128,22 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
     try:
         pob = R4.json()['entities'][pobid]['labels'][f'{locale}']['value']
     except KeyError:
-        logger.fail('Error fetching place of birth description')
+        logger.fail(L['error_pob'])
     try:
         pod = R5.json()['entities'][podid]['labels'][f'{locale}']['value']
     except KeyError:
-        logger.fail('Error fetching place of death description')
+        logger.fail(L['error_pod'])
 
     # Get descriptions
     try:
         pobdesc = R4.json()['entities'][pobid]['descriptions'][f'{locale}']['value']
     except KeyError:
-        logger.fail('Error fetching place of birth description')
+        logger.fail(L['error_pob'])
 
     try:
         poddesc = R5.json()['entities'][podid]['descriptions'][f'{locale}']['value']
     except KeyError:
-        logger.fail('Place of Death Description not found')
+        logger.fail(L['error_pod'])
     if verbosity:
-        logger.log('Done!')
+        logger.log(L['done'])
     return [dobraw, dodraw, pob, pod, pobdesc, poddesc]

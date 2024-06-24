@@ -4,17 +4,21 @@ import asyncio
 import aiohttp
 from helper.handlers import async_handler
 from helper.logger import Logger
+from localisation import default
+
+
+L = default['scrapers']['rnbsearch']
 
 
 @async_handler
 async def rnb_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
-    logger.log('Checking if a person exists in rnb...')
+    logger.log(L['start'])
     URL = f"https://nlr.ru/e-case3/sc2.php/web_gak/ss?text={name}&x=15&y=17"
     htm = requests.get(URL).text
     soup = BeautifulSoup(htm, "html.parser")
     allcards = soup.find("div", id="row1textmain").find("div", class_="text").find_all("a", href_="")
-    logger.log('Obtaining a description from the cards')
+    logger.log(L['description'])
 
     async def fetch_pict(j, session, URLCRDS):
         URLCRD = URLCRDS[:-1] + str(j)
@@ -64,13 +68,13 @@ async def rnb_check(name, verbosity=True, parallel=True):
         return non_parallel_rnb_check()
     else:
         dictres = {}
-        logger.log('Done!')
         async with aiohttp.ClientSession() as session1:
             task1 = [fetch_info(i, session1) for i in allcards]
             results1 = await asyncio.gather(*task1)
             results1 = results1[1]
+        logger.log(L['done'])
         if results1 is None:
-            dictres[""] = "Нет информации на сайте РНБ"
+            dictres[""] = L['not_found']
             return dictres
         for k in results1:
             dictres[k[0]] = k[1]

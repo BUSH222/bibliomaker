@@ -3,12 +3,16 @@ from bs4 import BeautifulSoup
 import re
 from helper.handlers import async_handler
 from helper.logger import Logger
+from localisation import default
+
+
+L = default['scrapers']['nnrsearch']
 
 
 @async_handler
 async def nnr_check(name, verbosity=True):
     logger = Logger(verbosity=verbosity)
-    logger.log('Checking if a person exists in nnr. ..')
+    logger.log(L['start'])
     URL = "http://e-heritage.ru/Catalog/FindPerson"
     data = {
         'maxRow': '1',
@@ -27,7 +31,7 @@ async def nnr_check(name, verbosity=True):
     htm = requests.post(URL, data=data).text
     soup = BeautifulSoup(htm, "html.parser")
     urlres = soup.find_all("a")
-    logger.log('Obtaining a description from the cards')
+    logger.log(L['description'])
     for j in urlres:
         suburl = str(j["href"])
         suburl = requests.get(f"http://e-heritage.ru{suburl}").text
@@ -54,5 +58,5 @@ async def nnr_check(name, verbosity=True):
 
         res[biores1[-1].string.replace("\r\n                ", "").replace("    ", "")] = \
             [i.string for i in biores2[-1].find_all("li")]
-        logger.log('Done!')
+        logger.log(L['done'])
         return res, crdres
