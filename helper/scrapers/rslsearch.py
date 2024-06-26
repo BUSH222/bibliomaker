@@ -49,7 +49,7 @@ async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibE
         r = requests.get(URL, data=reqdata).json()
         maxpage = r['MaxPage']
         totalhits = r['TotalHits']
-        logger.log(f'{L['number_of_pages']}{maxpage}, {L['number_of_hits']}{totalhits}')
+        logger.log(f"{L['number_of_pages']}{maxpage}, {L['number_of_hits']}{totalhits}")
         logger.log(L['fetching_pages'])
 
         hits = re.findall(PATTERN, r['content'])
@@ -92,7 +92,7 @@ async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibE
     maxpage = r['MaxPage']
     totalhits = r['TotalHits']
 
-    logger.log(f'{L['number_of_pages']}{maxpage}, {L['number_of_hits']}{totalhits}')
+    logger.log(f"{L['number_of_pages']}{maxpage}, {L['number_of_hits']}{totalhits}")
     logger.log(L['fetching_pages'])
 
     if totalhits > 75:
@@ -105,7 +105,7 @@ async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibE
         results1 = list(set(chain(*results1)))
         hits.extend(results1)
 
-    logger.log(f'{L['found_pages']}{len(hits)}')
+    logger.log(f"{L['found_pages']}{len(hits)}")
     if len(hits) > 50:
         logger.log(L['sleeping'])
         await asyncio.sleep(5)

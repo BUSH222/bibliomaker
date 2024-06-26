@@ -28,13 +28,13 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
     """
 
     # Constants
-    URL = f'https://{locale}.wikipedia.org/w/api.php'
+    URL = f"https://{locale}.wikipedia.org/w/api.php"
     URL2 = 'https://www.wikidata.org/w/api.php'
     PARAMS1 = {
         'action': 'query',
         'format': 'json',
         'list': 'search',
-        'sites': f'{locale}wiki',
+        'sites': f"{locale}wiki",
         'srsearch': person
     }
     # Initialising Variables
@@ -73,7 +73,7 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
         'prop': 'pageprops',
         'pageids': pageid,
         'formatversion': '2',
-        'sites': f'{locale}wiki',
+        'sites': f"{locale}wiki",
     }
 
     R2 = requests.get(url=URL, params=PARAMS2)
@@ -93,7 +93,7 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
     PARAMS3 = {'action': 'wbgetentities',
                'format': 'json',
                'ids': wikibase_id,
-               'sites': f'{locale}wiki',
+               'sites': f"{locale}wiki",
                'props': 'claims',
                'formatversion': '2'}
 
@@ -126,22 +126,22 @@ def wikisearch(person, locale='ru', verbosity=False) -> (list[None] | list | Non
     R5 = requests.get(url=URL2, params=PARAMS3)
 
     try:
-        pob = R4.json()['entities'][pobid]['labels'][f'{locale}']['value']
+        pob = R4.json()['entities'][pobid]['labels'][f"{locale}"]['value']
     except KeyError:
         logger.fail(L['error_pob'])
     try:
-        pod = R5.json()['entities'][podid]['labels'][f'{locale}']['value']
+        pod = R5.json()['entities'][podid]['labels'][f"{locale}"]['value']
     except KeyError:
         logger.fail(L['error_pod'])
 
     # Get descriptions
     try:
-        pobdesc = R4.json()['entities'][pobid]['descriptions'][f'{locale}']['value']
+        pobdesc = R4.json()['entities'][pobid]['descriptions'][f"{locale}"]['value']
     except KeyError:
         logger.fail(L['error_pob'])
 
     try:
-        poddesc = R5.json()['entities'][podid]['descriptions'][f'{locale}']['value']
+        poddesc = R5.json()['entities'][podid]['descriptions'][f"{locale}"]['value']
     except KeyError:
         logger.fail(L['error_pod'])
     if verbosity:

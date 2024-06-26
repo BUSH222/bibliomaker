@@ -16,12 +16,12 @@ class Logger:
 
     def log(self, text, color=HEADER):
         if self.verbosity and not self.pure:
-            print(f'{color} {text} {self.ENDC}')
+            print(f"{color} {text} {self.ENDC}")
         elif self.verbosity and self.pure:
-            print(f'LOG: {text}')
+            print(f"LOG: {text}")
 
     def fail(self, text, color=FAIL):
         if self.verbosity and not self.pure:
-            print(f'{color} {text} {self.ENDC}')
+            print(f"{color} {text} {self.ENDC}")
         elif self.verbosity and self.pure:
-            print(f'FAIL: {text}')
+            print(f"FAIL: {text}")

@@ -44,11 +44,11 @@ def start():
     lines = []
     if wiki_info is not None:
         lines.append(L['wiki_info'])
-        lines.append(f'{L['date_of_birth']}{wiki_info[0]} ; {L['date_of_death']}{wiki_info[1]}\n')
-        lines.append(f'{L['place_of_birth']}{wiki_info[2]} ; {L['description']}{wiki_info[4]}\n')
-        lines.append(f'{L['place_of_death']}{wiki_info[3]} ; {L['description']}{wiki_info[5]}\n')
+        lines.append(f"{L['date_of_birth']}{wiki_info[0]} ; {L['date_of_death']}{wiki_info[1]}\n")
+        lines.append(f"{L['place_of_birth']}{wiki_info[2]} ; {L['description']}{wiki_info[4]}\n")
+        lines.append(f"{L['place_of_death']}{wiki_info[3]} ; {L['description']}{wiki_info[5]}\n")
         lines.append('\n\n\n\n')
-    lines.append(f'{L['exists_in_higeo']}{higeo_info}')
+    lines.append(f"{L['exists_in_higeo']}{higeo_info}")
     lines.append('\n\n\n\n')
     lines.append(L['bibliographical_info'])
     if rsl_data is not None:
@@ -74,7 +74,7 @@ def start():
         lines.append('\n\n')
     if rnb_data is not None:
         lines.append(L['rnb_card_images'])
-        lines.append('\n'.join([f'{key}:   {value}' for key, value in rnb_data.items()]))
+        lines.append('\n'.join([f"{key}:   {value}" for key, value in rnb_data.items()]))
         lines.append('\n\n')
     file_save(lines)
 

@@ -38,9 +38,9 @@ def geoknigasearch(person, verbosity=False) -> (None | list[BibEntry]):
 
     if pages_raw is not None:
         pages = int(re.search(r"page=(\d*)", str(pages_raw)).group(1))+1
-    logger.log(f'{L['pages']}{pages}')
+    logger.log(f"{L['pages']}{pages}")
     for i in range(pages):  # Obtain the necessary info
-        r = requests.get(f'{URL}&page={i}').text
+        r = requests.get(f"{URL}&page={i}").text
         soup = BeautifulSoup(r, "html.parser")
         titles = soup.find_all(name='div', class_='book_body_title')
         tomes = soup.find_all(name='div', class_='book_body_izdan_full')
@@ -48,7 +48,7 @@ def geoknigasearch(person, verbosity=False) -> (None | list[BibEntry]):
         publishers = soup.find_all(name='div', class_='book_body_izdat_full')
         cnt += len(titles)
         books.extend(list(zip(titles, tomes, authors, publishers)))
-    logger.log(f'{L['books']}{cnt}')
+    logger.log(f"{L['books']}{cnt}")
     books = list(map(list, books))
 
     for i in range(len(books)):  # Cleanup

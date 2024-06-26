@@ -28,7 +28,7 @@ async def rnb_check(name, verbosity=True, parallel=True):
             soupcrd = BeautifulSoup(hitcrd, "html.parser")
             heading = soupcrd.find("div", class_="center").find("b").string
             pict = soupcrd.find("img", class_="card")["src"]
-            stroka = f'https://nlr.ru{pict}'
+            stroka = f"https://nlr.ru{pict}"
             resf.append(heading[:-1])
             resf.append(stroka)
         return resf
@@ -63,7 +63,7 @@ async def rnb_check(name, verbosity=True, parallel=True):
                     soupcrd = BeautifulSoup(htmcrd, "html.parser")
                     heading = soupcrd.find("div", class_="center").find("b").string
                     pict = soupcrd.find("img", class_="card")["src"]
-                    out[heading[:-1]] = f'https://nlr.ru{pict}'
+                    out[heading[:-1]] = f"https://nlr.ru{pict}"
     if not parallel:
         return non_parallel_rnb_check()
     else:

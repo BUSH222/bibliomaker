@@ -11,7 +11,7 @@ def handler(func):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            return f'{L['error']}{repr(e)}'
+            return f"{L['error']}{repr(e)}"
     return wrapper
 
 
