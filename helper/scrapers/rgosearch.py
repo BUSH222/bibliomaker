@@ -4,16 +4,20 @@ import asyncio
 import aiohttp
 from helper.logger import Logger
 from helper.handlers import async_handler
+from localisation import default
+
+
+L = default['scrapers']['rgosearch']
 
 
 @async_handler
 async def rgo_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
-    logger.log('Checking if a person exists in rgo...')
+    logger.log(L['start'])
     URL = f"https://elib.rgo.ru/simple-search?location=%2F&query={name}&rpp=10&sort_by=score&order=desc"
     htm = requests.get(URL).text
     if requests.get(URL).status_code != 200:
-        return ["Рго не отвечает...", ]
+        return [L['not_responding'], ]
 
     soup = BeautifulSoup(htm, "html.parser")
     notfoud = soup.find("main", class_="main ml-md-5 mr-md-5 mr-xl-0 ml-xl-0").find("p")
@@ -44,7 +48,7 @@ async def rgo_check(name, verbosity=True, parallel=True):
 
     def non_parallel_rgo_check(logger, params, limit):
         res = {}
-        logger.log('Obtaining a description from the cards')
+        logger.log(L['description'])
 
         for j in range(0, int(limit), 10):
             params['start'] = str(j)
@@ -58,7 +62,7 @@ async def rgo_check(name, verbosity=True, parallel=True):
                 urlres[cnt] = f"https://elib.rgo.ru/{str(urlres[cnt])[45:68]}"
                 res[textres[cnt]] = str(urlres[cnt])
                 cnt += 1
-        logger.log("Done!")
+        logger.log(L['done'])
         return res
 
     if notfoud is None:
@@ -67,13 +71,13 @@ async def rgo_check(name, verbosity=True, parallel=True):
         if not parallel:
             return non_parallel_rgo_check(logger, params, limit)
         entries = []
-        logger.log('Obtaining a description from the cards')
-        logger.log("Done!")
+        logger.log(L['description'])
+        logger.log(L['done'])
         async with aiohttp.ClientSession() as session1:
             task1 = [fetch_crds(params, j, session1) for j in range(0, int(limit) - 1, 10)]
             results1 = await asyncio.gather(*task1)
             entries.extend(results1)
         return entries
     else:
-        logger.log("Not found, exiting")
+        logger.log(L['not_found'])
         return [notfoud.string, ]

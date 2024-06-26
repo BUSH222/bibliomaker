@@ -4,12 +4,16 @@ import asyncio
 import aiohttp
 from helper.handlers import async_handler
 from helper.logger import Logger
+from localisation import default
+
+
+L = default['scrapers']['spbsearch']
 
 
 @async_handler
 async def spb_check(name, verbosity=True, parallel=True):
     logger = Logger(verbosity=verbosity)
-    logger.log('Checking if a person exists in spb...')
+    logger.log(L['start'])
     URL = 'https://primo.nlr.ru/primo_library/libweb/action/search.do'
     params = {
         'fn': 'search',
@@ -21,7 +25,7 @@ async def spb_check(name, verbosity=True, parallel=True):
     limit = int(soup.find("div", id="resultsNumbersTile").find("em").string)
     pagcnt = ((limit + 19) // 20)
     bodyres = []
-    logger.log('Obtaining a description from the cards')
+    logger.log(L['description'])
 
     def non_parallel_spb_check(logger):
         for page in range(1, pagcnt + 1):
@@ -104,7 +108,7 @@ async def spb_check(name, verbosity=True, parallel=True):
     async with aiohttp.ClientSession() as session1:
         task1 = [fetch_page(page, session1) for page in range(1, pagcnt + 1)]
         results1 = await asyncio.gather(*task1)
-        logger.log('Done!')
+        logger.log(L['Done!'])
         if results1 == []:
-            return [["Нет информации на сайте СПБ"], ]
+            return [[L['not_found']], ]
         return results1

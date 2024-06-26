@@ -7,6 +7,10 @@ import aiohttp
 from helper.bibentry import BibEntry
 from helper.handlers import async_handler
 from helper.logger import Logger
+from localisation import default
+
+
+L = default['scrapers']['rslsearch']
 
 
 @async_handler
@@ -40,12 +44,13 @@ async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibE
             return BibEntry(author, title, publisher, physical_desc, tome)
 
     def non_parallel_rslsearch(logger, URL, URL2, PATTERN, reqdata):
-        logger.log('Non-parallel search specified, starting...')
+        logger.log(L['non_parr_start'])
         entries = []
         r = requests.get(URL, data=reqdata).json()
         maxpage = r['MaxPage']
         totalhits = r['TotalHits']
-        logger.log(f'Found, number of pages: {maxpage}, number of hits {totalhits}; Fetching pages')
+        logger.log(f"{L['number_of_pages']}{maxpage}, {L['number_of_hits']}{totalhits}")
+        logger.log(L['fetching_pages'])
 
         hits = re.findall(PATTERN, r['content'])
         for i in range(1, r['MaxPage']):
@@ -53,7 +58,7 @@ async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibE
             r_l = requests.get(URL, data=reqdata).json()
             hits.extend(re.findall(PATTERN, r_l['content']))
 
-        logger.log('Gathering bibliographical info...')
+        logger.log(L['gathering_bib'])
         for p in hits:
             hit = requests.get(URL2+p).text
             author = ' '.join(re.findall(r'<td itemprop="author">(.*?)<\/td>', hit))
@@ -62,7 +67,7 @@ async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibE
             physical_desc = ' '.join(re.findall(r'<th>Физическое описание<\/th><td>(.*?)<\/td>', hit))
             tome = ' '.join(re.findall(r'<th>Том<\/th><td>(.*?)<\/td>', hit))
             entries.append(BibEntry(author, title, publisher, physical_desc, tome))
-        logger.log('Done!')
+        logger.log(L['Done'])
         return entries
 
     logger = Logger(verbosity=verbosity)
@@ -78,7 +83,7 @@ async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibE
 
     entries = []
 
-    logger.log('Starting the RSL search...')
+    logger.log(L['start'])
     if not parallel:
         return non_parallel_rslsearch(logger, URL, URL2, PATTERN, reqdata)
 
@@ -87,10 +92,11 @@ async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibE
     maxpage = r['MaxPage']
     totalhits = r['TotalHits']
 
-    logger.log(f'Found, number of pages: {maxpage}, number of hits {totalhits}; Fetching pages')
+    logger.log(f"{L['number_of_pages']}{maxpage}, {L['number_of_hits']}{totalhits}")
+    logger.log(L['fetching_pages'])
 
     if totalhits > 75:
-        logger.log('Too large for parallel search, starting the non-parallel search')
+        logger.log(L['too_large'])
         return non_parallel_rslsearch(logger, URL, URL2, PATTERN, reqdata)
 
     async with aiohttp.ClientSession() as session1:
@@ -99,15 +105,15 @@ async def rslsearch(person, verbosity=False, parallel=True) -> (None | list[BibE
         results1 = list(set(chain(*results1)))
         hits.extend(results1)
 
-    logger.log(f'Found {len(hits)} pages')
+    logger.log(f"{L['found_pages']}{len(hits)}")
     if len(hits) > 50:
-        logger.log('Sleeping to prevent rate limits')
+        logger.log(L['sleeping'])
         await asyncio.sleep(5)
-    logger.log('Gathering bibliographical info...')
+    logger.log(L['gathering_bib'])
     async with aiohttp.ClientSession() as session2:
         tasks2 = [fetch_entry(session2, p) for p in hits]
         results2 = await asyncio.gather(*tasks2)
 
         entries.extend(results2)
-    logger.log('Done!')
+    logger.log(L['done'])
     return entries

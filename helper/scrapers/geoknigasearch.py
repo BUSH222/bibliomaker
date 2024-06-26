@@ -4,6 +4,10 @@ import re
 from helper.bibentry import BibEntry
 from helper.handlers import handler
 from helper.logger import Logger
+from localisation import default
+
+
+L = default['scrapers']['geoknigasearch']
 
 
 @handler
@@ -25,18 +29,18 @@ def geoknigasearch(person, verbosity=False) -> (None | list[BibEntry]):
     finbooks = []
 
     logger = Logger(verbosity=verbosity)
-    logger.log('Starting the geokniga search...')
+    logger.log(L['start'])
 
     r = requests.get(URL).text
     soup = BeautifulSoup(r, "html.parser")
     pages_raw = soup.find(name='li', class_='pager-last last')
-    logger.log('Looking for the total number of pages')
+    logger.log(L['looking'])
 
     if pages_raw is not None:
         pages = int(re.search(r"page=(\d*)", str(pages_raw)).group(1))+1
-    logger.log(f'Found {pages} pages, performing requests to get the data')
+    logger.log(f"{L['pages']}{pages}")
     for i in range(pages):  # Obtain the necessary info
-        r = requests.get(f'{URL}&page={i}').text
+        r = requests.get(f"{URL}&page={i}").text
         soup = BeautifulSoup(r, "html.parser")
         titles = soup.find_all(name='div', class_='book_body_title')
         tomes = soup.find_all(name='div', class_='book_body_izdan_full')
@@ -44,7 +48,7 @@ def geoknigasearch(person, verbosity=False) -> (None | list[BibEntry]):
         publishers = soup.find_all(name='div', class_='book_body_izdat_full')
         cnt += len(titles)
         books.extend(list(zip(titles, tomes, authors, publishers)))
-    logger.log(f'Found {cnt} books, filtering the data')
+    logger.log(f"{L['books']}{cnt}")
     books = list(map(list, books))
 
     for i in range(len(books)):  # Cleanup
@@ -58,7 +62,7 @@ def geoknigasearch(person, verbosity=False) -> (None | list[BibEntry]):
         temppublishers = temppublishers[0] if temppublishers else []
         finbooks.append(BibEntry(authors=' '.join(tempauthors), title=temptitles, physical_desc='',  # No physical desc
                                  source=''.join(temppublishers), tome=temptomes))
-    logger.log('Done!')
+    logger.log(L['done'])
     if finbooks == []:
         return None
     return finbooks

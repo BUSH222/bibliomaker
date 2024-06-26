@@ -1,4 +1,7 @@
 from functools import wraps
+from localisation import default
+
+L = default['handlers']
 
 
 def handler(func):
@@ -8,7 +11,7 @@ def handler(func):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            return f'Something went wrong, try again:\nFull exception:\n{repr(e)}'
+            return f"{L['error']}{repr(e)}"
     return wrapper
 
 
@@ -19,6 +22,6 @@ def async_handler(func):
         try:
             return await func(*args, **kwargs)
         except Exception as e:
-            return f"Something went wrong, try again:\nFull exception:\n{repr(e)}"
+            return f"{L['error']}{repr(e)}"
 
     return wrapper

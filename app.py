@@ -6,12 +6,16 @@ from time import localtime, strftime
 import asyncio
 import helper
 import threading
+from localisation import default
+
+
+L = default['app']  # Default language
 
 
 class StdoutRedirector:
     def __init__(self, text_widget):
         self.text_widget = text_widget
-        self.write(f"Welcome to bibliomaker!\nRight now it is {strftime('%H:%M:%S', localtime())}.\n")
+        self.write(f"{L['welcome']} {strftime('%H:%M:%S', localtime())}.\n")
 
     def write(self, string):
         self.text_widget.config(state='normal')
@@ -39,47 +43,47 @@ def start():
 
     lines = []
     if wiki_info is not None:
-        lines.append('Wikipedia information found:\n')
-        lines.append(f'Date of Birth: {wiki_info[0]} ; Date of death: {wiki_info[1]}\n')
-        lines.append(f'Place of Birth: {wiki_info[2]} ; Description: {wiki_info[4]}\n')
-        lines.append(f'Place of Death: {wiki_info[3]} ; Description: {wiki_info[5]}\n')
+        lines.append(L['wiki_info'])
+        lines.append(f"{L['date_of_birth']}{wiki_info[0]} ; {L['date_of_death']}{wiki_info[1]}\n")
+        lines.append(f"{L['place_of_birth']}{wiki_info[2]} ; {L['description']}{wiki_info[4]}\n")
+        lines.append(f"{L['place_of_death']}{wiki_info[3]} ; {L['description']}{wiki_info[5]}\n")
         lines.append('\n\n\n\n')
-    lines.append(f'Person exists in the higeo database: {higeo_info}')
+    lines.append(f"{L['exists_in_higeo']}{higeo_info}")
     lines.append('\n\n\n\n')
-    lines.append('Bibliographical info:\n\n')
+    lines.append(L['bibliographical_info'])
     if rsl_data is not None:
-        lines.append('RSL Data:\n')
+        lines.append(L['rsl_data'])
         lines.append('\n'.join(map(str, rsl_data)))
         lines.append('\n\n')
     if geokniga_data is not None:
-        lines.append('Geokniga Data:\n')
+        lines.append(L['geokniga_data'])
         lines.append('\n'.join(map(str, geokniga_data)))
         lines.append('\n\n')
 
     if rgo_data is not None:
-        lines.append('RGO Data:\n')
+        lines.append(L['rgo_data'])
         lines.append('\n'.join(rgo_data))
         lines.append('\n\n')
     if nnr_data is not None:
-        lines.append('NNR Data:\n')
+        lines.append(L['nnr_data'])
         lines.append('\n'.join([i[0] for i in nnr_data[1]['Публикации ']]))
         lines.append('\n\n')
     if spb_data is not None:
-        lines.append('SPB Data:\n')
+        lines.append(L['spb_data'])
         lines.append('\n'.join(spb_data[0]))
         lines.append('\n\n')
     if rnb_data is not None:
-        lines.append('RNB Card Images:\n')
-        lines.append('\n'.join([f'{key}:   {value}' for key, value in rnb_data.items()]))
+        lines.append(L['rnb_card_images'])
+        lines.append('\n'.join([f"{key}:   {value}" for key, value in rnb_data.items()]))
         lines.append('\n\n')
     file_save(lines)
 
 
 def update_button_text(percentage=None):
     if percentage is None:
-        start_button.config(text="Start")
+        start_button.config(text=L['start'])
     else:
-        start_button.config(text=f"Start ({percentage}%)")
+        start_button.config(text=f"{L['start']} ({percentage}%)")
 
 
 def file_save(text):
@@ -96,26 +100,26 @@ root = tk.Tk()
 root.title("Bibliomaker")
 root.resizable(False, False)
 
-tk.Label(root, text="Surname").grid(row=0, column=0)
+tk.Label(root, text=L['surname']).grid(row=0, column=0)
 entry_surname = tk.Entry(root)
 entry_surname.grid(row=0, column=1)
 
-tk.Label(root, text="Name").grid(row=1, column=0)
+tk.Label(root, text=L['name']).grid(row=1, column=0)
 entry_name = tk.Entry(root)
 entry_name.grid(row=1, column=1)
 
-tk.Label(root, text="Patronymic").grid(row=2, column=0)
+tk.Label(root, text=L['patronymic']).grid(row=2, column=0)
 entry_patronymic = tk.Entry(root)
 entry_patronymic.grid(row=2, column=1)
 
-tk.Label(root, text="Keywords").grid(row=3, column=0)
+tk.Label(root, text=L['keywords']).grid(row=3, column=0)
 entry_fields_of_work = tk.Entry(root, state='disabled')
 entry_fields_of_work.grid(row=3, column=1)
 
 t = threading.Thread(target=start, name="Start")
 t.daemon = True
 
-start_button = tk.Button(root, text="Start", command=lambda: t.start())
+start_button = tk.Button(root, text=L['start'], command=lambda: t.start())
 start_button.grid(row=4, columnspan=2)
 
 # For Logs

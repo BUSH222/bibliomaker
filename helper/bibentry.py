@@ -21,8 +21,8 @@ class BibEntry:
 
     def __repr__(self):
         """Print the contents of the entry, testing function"""
-        return f'{self.authors} {self.title} // {self.source} {self.physical_desc} ! {self.tome}'
+        return f"{self.authors} {self.title} // {self.source} {self.physical_desc} ! {self.tome}"
 
     def __str__(self):
         """Return the contents of the entry."""
-        return f'{self.authors} {self.title} // {self.source} {self.physical_desc} ! {self.tome}'
+        return f"{self.authors} {self.title} // {self.source} {self.physical_desc} ! {self.tome}"
