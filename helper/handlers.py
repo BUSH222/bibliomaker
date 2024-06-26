@@ -3,6 +3,7 @@ from localisation import default
 
 L = default['handlers']
 
+
 def handler(func):
     """Decorator function, prints exceptions instead of exiting."""
     @wraps(func)
