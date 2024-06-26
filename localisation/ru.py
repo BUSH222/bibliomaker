@@ -1,4 +1,4 @@
-en = {
+ru = {
     'app': {
         'welcome': 'Добро пожаловать в bibliomaker!\nCейчас',
         'wiki_info': 'Найдена информация в Википедии:\n',
@@ -51,7 +51,7 @@ en = {
             'not_found': 'Не найдено',
         },
         'rnbsearch': {
-            'start': 'Checking if a person exists in rnb...',
+            'start': 'Проверяем, существует ли человек в RNB...',
             'description': 'Получаем описания из карточек',
             'done': 'Готово!',
             'not_found': 'Не найдено'
