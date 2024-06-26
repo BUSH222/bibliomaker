@@ -1,3 +1,4 @@
 from .en import en
+from .en import ru
 
-default = en  # Default language
+default = ru  # Default language
