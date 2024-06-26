@@ -119,7 +119,7 @@ entry_fields_of_work.grid(row=3, column=1)
 t = threading.Thread(target=start, name="Start")
 t.daemon = True
 
-start_button = tk.Button(root, text="Start", command=lambda: t.start())
+start_button = tk.Button(root, text=L['start'], command=lambda: t.start())
 start_button.grid(row=4, columnspan=2)
 
 # For Logs
