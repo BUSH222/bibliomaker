@@ -36,6 +36,7 @@ en = {
         },
         'higeosearch': {
             'start': 'Starting the search on the higeo.ginras.ru website',
+            'exists': '!! Person already exists in the higeo database !!',
             'done': 'Done!',
         },
         'nnrsearch': {

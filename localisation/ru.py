@@ -36,6 +36,7 @@ ru = {
         },
         'higeosearch': {
             'start': 'Начинаем поиск на сайте higeo.ginras.ru',
+            'exists': '!! Библиография уже существует в базе данных higeo!!',
             'done': 'Готово!',
         },
         'nnrsearch': {
